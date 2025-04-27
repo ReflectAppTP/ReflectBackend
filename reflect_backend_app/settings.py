@@ -37,7 +37,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'api',
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'corsheaders',
+    'api.authReflect',
+    'api.emotions',
 ]
 
 MIDDLEWARE = [
@@ -50,7 +54,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'reflect_backend_temp.urls'
+ROOT_URLCONF = 'reflect_backend_app.urls'
 
 TEMPLATES = [
     {
@@ -67,12 +71,34 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'reflect_backend_temp.wsgi.application'
+WSGI_APPLICATION = 'reflect_backend_app.wsgi.application'
 
 OPTIONS = {
 }
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+
+AUTH_USER_MODEL = 'authReflect.User'
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+}
+
+SIMPLE_JWT = {
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+}
+
+#ДЛЯ РАЗРАБОТКИ, ПОЗЖЕ РАЗОБРАТЬСЯ С КОНКРЕТНЫМИ ДОМЕНАМИ ЗАПРОСОВ С ФРОНТЕНДА
+CORS_ALLOW_ALL_ORIGINS = True
+
+from datetime import timedelta
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+}
 
 DATABASES = {
     'default': {
@@ -91,16 +117,16 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        'NAME': 'django.contrib.authReflect.password_validation.UserAttributeSimilarityValidator',
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'NAME': 'django.contrib.authReflect.password_validation.MinimumLengthValidator',
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        'NAME': 'django.contrib.authReflect.password_validation.CommonPasswordValidator',
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        'NAME': 'django.contrib.authReflect.password_validation.NumericPasswordValidator',
     },
 ]
 

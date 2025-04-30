@@ -1,8 +1,11 @@
 from rest_framework import generics, status
-from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import RegisterSerializer, UserSerializer, LoginSerializer
 from .models import User
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from .serializers import UserSerializer
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -19,3 +22,11 @@ class RegisterView(generics.CreateAPIView):
 
 class LoginView(TokenObtainPairView):
     serializer_class = LoginSerializer
+
+
+class UserProfileView(APIView):
+    permission_classes = [IsAuthenticated]  # Требует валидный access-токен
+
+    def get(self, request):
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data)

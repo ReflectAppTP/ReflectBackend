@@ -17,7 +17,7 @@ class UserManager(BaseUserManager):
 class User(AbstractBaseUser):
     username = models.CharField(max_length=50, unique=True)
     email = models.EmailField(max_length=100, unique=True)
-    password_hash = models.CharField(max_length=255)
+    password = models.CharField(max_length=256)
     created_at = models.DateTimeField(auto_now_add=True)
     is_admin = models.BooleanField(default=False)
     is_premium = models.BooleanField(default=False)
@@ -26,6 +26,12 @@ class User(AbstractBaseUser):
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
+
+    def save(self, *args, **kwargs):
+        if self.password and not self.password.startswith('pbkdf2_sha256$'):
+            self.set_password(self.password)
+        super().save(*args, **kwargs)
+
 
     def __str__(self):
         return self.username

@@ -18,3 +18,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data['password_hash'] = make_password(validated_data.pop('password'))
         return User.objects.create(**validated_data)
+
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField()

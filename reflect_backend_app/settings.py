@@ -77,7 +77,7 @@ OPTIONS = {
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-AUTH_USER_MODEL = 'authReflect.User'
+AUTH_USER_MODEL = 'api.authReflect.User'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [

@@ -19,7 +19,6 @@ class Migration(migrations.Migration):
                 ('last_login', models.DateTimeField(blank=True, null=True, verbose_name='last login')),
                 ('username', models.CharField(max_length=50, unique=True)),
                 ('email', models.EmailField(max_length=255, unique=True)),
-                ('password_hash', models.CharField(max_length=255)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('is_admin', models.BooleanField(default=False)),
                 ('is_premium', models.BooleanField(default=False)),

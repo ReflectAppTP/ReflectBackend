@@ -1,7 +1,7 @@
 from django.urls import path
-from .views import UserStateListCreateView, UserStateRetrieveUpdateDestroyView
+from .views import UserStateView, UserStateDetailView
 
 urlpatterns = [
-    path('states/', UserStateListCreateView.as_view(), name='userstate-list'),
-    path('states/<int:pk>/', UserStateRetrieveUpdateDestroyView.as_view(), name='userstate-detail'),
+    path('states/', UserStateView.as_view(), name='userstate-list'),
+    path('states/<int:pk>/', UserStateDetailView.as_view(), name='userstate-detail'),
 ]

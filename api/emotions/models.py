@@ -1,5 +1,7 @@
 from django.db import models
-from api.authReflect.models import User
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 class Tag(models.Model):
     name = models.CharField(max_length=50, unique=True)
@@ -10,20 +12,29 @@ class EmotionalTag(models.Model):
     emoji = models.CharField(max_length=10, blank=True, null=True)
 
 class UserState(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    value = models.IntegerField()
-    description = models.TextField(blank=True, null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='states')
+    description = models.TextField(blank=True)
+    value = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    @property
+    def tags(self):
+        return Tag.objects.filter(userstatetag__user_state=self)
+
+    @property
+    def emotional_tags(self):
+        return EmotionalTag.objects.filter(useremotionaltag__user_state=self)
+
+
 class UserStateTag(models.Model):
-    user_state = models.ForeignKey('UserState', on_delete=models.CASCADE)
+    user_state = models.ForeignKey(UserState, on_delete=models.CASCADE, related_name='state_tags')
     tag = models.ForeignKey('Tag', on_delete=models.CASCADE)
 
     class Meta:
         unique_together = ('user_state', 'tag')
 
 class UserEmotionalTag(models.Model):
-    user_state = models.ForeignKey('UserState', on_delete=models.CASCADE)
+    user_state = models.ForeignKey(UserState, on_delete=models.CASCADE, related_name='emotional_tag_relations')
     emotional_tag = models.ForeignKey('EmotionalTag', on_delete=models.CASCADE)
 
     class Meta:

@@ -1,28 +1,24 @@
 from rest_framework import generics, permissions
 from .models import UserState, Tag, EmotionalTag
-from .serializers import UserStateSerializer, CreateUserStateSerializer, TagSerializer, EmotionalTagSerializer
+from .serializers import UserStateSerializer
 
-class UserStateCreateView(generics.CreateAPIView):
-    queryset = UserState.objects.all()
-    serializer_class = CreateUserStateSerializer
-    permission_classes = [permissions.IsAuthenticated]
 
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
-
-class UserStateListView(generics.ListAPIView):
+class UserStateListCreateView(generics.ListCreateAPIView):
     serializer_class = UserStateSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         return UserState.objects.filter(user=self.request.user)
 
-class TagListView(generics.ListAPIView):
-    queryset = Tag.objects.all()
-    serializer_class = TagSerializer
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+class UserStateRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = UserStateSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-class EmotionalTagListView(generics.ListAPIView):
-    queryset = EmotionalTag.objects.all()
-    serializer_class = EmotionalTagSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    def get_queryset(self):
+        return UserState.objects.filter(user=self.request.user)
+
+    def perform_update(self, serializer):
+        serializer.save(user=self.request.user)

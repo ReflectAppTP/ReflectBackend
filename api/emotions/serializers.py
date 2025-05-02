@@ -1,45 +1,42 @@
 from rest_framework import serializers
 from .models import *
 
-
-class TagSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Tag
-        fields = '__all__'
-
-
-class EmotionalTagSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = EmotionalTag
-        fields = '__all__'
-
-
 class UserStateSerializer(serializers.ModelSerializer):
-    tags = TagSerializer(many=True, read_only=True)
-    emotional_tags = EmotionalTagSerializer(many=True, read_only=True)
+    emotional_tags = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=EmotionalTag.objects.all(),
+        write_only=True
+    )
+    tags = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Tag.objects.all(),
+        write_only=True
+    )
 
     class Meta:
         model = UserState
-        fields = ['id', 'user', 'value', 'description', 'created_at', 'tags', 'emotional_tags']
-
-
-class CreateUserStateSerializer(serializers.ModelSerializer):
-    tag_ids = serializers.ListField(child=serializers.IntegerField(), write_only=True, required=False)
-    emotional_tag_ids = serializers.ListField(child=serializers.IntegerField(), write_only=True, required=False)
-
-    class Meta:
-        model = UserState
-        fields = ['value', 'description', 'tag_ids', 'emotional_tag_ids']
+        fields = ['id', 'description', 'value', 'created_at', 'emotional_tags', 'tags']
+        read_only_fields = ['id', 'created_at']
 
     def create(self, validated_data):
-        tag_ids = validated_data.pop('tag_ids', [])
-        emotional_tag_ids = validated_data.pop('emotional_tag_ids', [])
-        user_state = UserState.objects.create(user=self.context['request'].user, **validated_data)
+        emotional_tags = validated_data.pop('emotional_tags', [])
+        tags = validated_data.pop('tags', [])
 
-        for tag_id in tag_ids:
-            UserStateTag.objects.create(user_state=user_state, tag_id=tag_id)
+        user_state = UserState.objects.create(
+            user=self.context['request'].user,
+            **validated_data
+        )
 
-        for emotional_tag_id in emotional_tag_ids:
-            UserEmotionalTag.objects.create(user_state=user_state, emotional_tag_id=emotional_tag_id)
+        for et in emotional_tags:
+            UserEmotionalTag.objects.create(user_state=user_state, emotional_tag=et)
+
+        for t in tags:
+            UserStateTag.objects.create(user_state=user_state, tag=t)
 
         return user_state
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['emotional_tags'] = [et.id for et in instance.emotional_tags.all()]
+        representation['tags'] = [t.id for t in instance.tags.all()]
+        return representation

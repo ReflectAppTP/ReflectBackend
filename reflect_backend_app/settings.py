@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-
+from datetime import timedelta
 from pathlib import Path
 import os.path
 
@@ -86,16 +86,15 @@ REST_FRAMEWORK = {
     ],
 }
 
-SIMPLE_JWT = {
-    'USER_ID_FIELD': 'id',
-    'USER_ID_CLAIM': 'user_id',
-}
-
 #ДЛЯ РАЗРАБОТКИ, ПОЗЖЕ РАЗОБРАТЬСЯ С КОНКРЕТНЫМИ ДОМЕНАМИ ЗАПРОСОВ С ФРОНТЕНДА
 CORS_ALLOW_ALL_ORIGINS = True
 
-from datetime import timedelta
+
 SIMPLE_JWT = {
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
     'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
 }

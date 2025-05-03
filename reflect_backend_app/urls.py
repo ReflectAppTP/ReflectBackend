@@ -6,5 +6,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/authReflect/', include('api.authReflect.urls')),
     path('api/emotions/', include('api.emotions.urls')),
-path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh')
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh')
 ]

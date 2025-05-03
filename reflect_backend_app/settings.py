@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'api.authReflect',
     'api.emotions',
+    'rest_framework.authtoken',
+    'rest_framework_simplejwt.token_blacklist'
 ]
 
 MIDDLEWARE = [

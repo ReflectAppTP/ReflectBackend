@@ -4,12 +4,10 @@ from .serializers import UserStateSerializer, EmotionalTagSerializer, TagSeriali
 from django.utils import timezone
 from datetime import datetime
 
+
 class UserStateView(generics.ListCreateAPIView):
     serializer_class = UserStateSerializer
     permission_classes = [permissions.IsAuthenticated]
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
 
     def get_queryset(self):
         queryset = UserState.objects.filter(user=self.request.user)
@@ -23,7 +21,7 @@ class UserStateView(generics.ListCreateAPIView):
             except ValueError:
                 pass
 
-        # Фильтрация по временному промежутку
+        # Фильтрация по периоду
         start_date = self.request.query_params.get('start_date', None)
         end_date = self.request.query_params.get('end_date', None)
 
@@ -36,6 +34,9 @@ class UserStateView(generics.ListCreateAPIView):
                 pass
 
         return queryset.order_by('-created_at')
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
 class UserStateDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = UserStateSerializer

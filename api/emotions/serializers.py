@@ -60,10 +60,3 @@ class UserStateSerializer(serializers.ModelSerializer):
         )
 
         return user_state
-
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        # Добавляем ID связанных объектов в вывод
-        data['tags'] = [tag.id for tag in instance.tags]
-        data['emotional_tags'] = [et.id for et in instance.emotional_tags]
-        return data

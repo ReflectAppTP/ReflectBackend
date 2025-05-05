@@ -1,6 +1,6 @@
 from rest_framework import generics, permissions
-from .models import UserState
-from .serializers import UserStateSerializer
+from .models import UserState, EmotionalTag, Tag
+from .serializers import UserStateSerializer, EmotionalTagSerializer, TagSerializer
 
 class UserStateView(generics.ListCreateAPIView):
     serializer_class = UserStateSerializer
@@ -18,3 +18,11 @@ class UserStateDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         return UserState.objects.filter(user=self.request.user)
+
+class EmotionalTagListView(generics.ListAPIView):
+    queryset = EmotionalTag.objects.all()
+    serializer_class = EmotionalTagSerializer
+
+class TagListView(generics.ListAPIView):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer

@@ -1,6 +1,15 @@
 from rest_framework import serializers
 from .models import *
 
+class EmotionalTagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EmotionalTag
+        fields = ['id', 'name', 'emoji']
+
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ['id', 'name', 'emoji']
 
 class UserStateSerializer(serializers.ModelSerializer):
     tags = serializers.PrimaryKeyRelatedField(

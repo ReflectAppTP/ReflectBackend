@@ -7,7 +7,8 @@ class UserStateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return UserState.objects.filter(user=self.request.user)
+        return UserState.objects.filter(user=self.request.user)\
+            .prefetch_related('tags', 'emotional_tags')
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)

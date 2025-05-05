@@ -11,21 +11,37 @@ class TagSerializer(serializers.ModelSerializer):
         model = Tag
         fields = ['id', 'name', 'emoji']
 
+
 class UserStateSerializer(serializers.ModelSerializer):
-    tags = serializers.PrimaryKeyRelatedField(
+    tags = TagSerializer(many=True, read_only=True)
+    emotional_tags = EmotionalTagSerializer(many=True, read_only=True)
+
+    # Поля для записи (принимают ID)
+    tag_ids = serializers.PrimaryKeyRelatedField(
         many=True,
         queryset=Tag.objects.all(),
+        source='tags',
         write_only=True
     )
-    emotional_tags = serializers.PrimaryKeyRelatedField(
+    emotional_tag_ids = serializers.PrimaryKeyRelatedField(
         many=True,
         queryset=EmotionalTag.objects.all(),
+        source='emotional_tags',
         write_only=True
     )
 
     class Meta:
         model = UserState
-        fields = ['id', 'description', 'value', 'created_at', 'tags', 'emotional_tags']
+        fields = [
+            'id',
+            'description',
+            'value',
+            'created_at',
+            'tags',
+            'emotional_tags',
+            'tag_ids',
+            'emotional_tag_ids'
+        ]
         read_only_fields = ['id', 'created_at']
 
     def create(self, validated_data):

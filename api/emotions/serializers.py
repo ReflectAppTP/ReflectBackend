@@ -15,8 +15,7 @@ class TagSerializer(serializers.ModelSerializer):
 class UserStateSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     emotional_tags = EmotionalTagSerializer(many=True, read_only=True)
-    created_at = serializers.DateTimeField(format='%Y-%m-%d %H:%M:%S')
-
+    created_at = serializers.DateTimeField(format='%Y-%m-%d %H:%M:%S', required=False, write_only=False)
     # Поля для записи (только ID)
     tag_ids = serializers.PrimaryKeyRelatedField(
         many=True,
@@ -45,9 +44,10 @@ class UserStateSerializer(serializers.ModelSerializer):
             'tag_ids',
             'emotional_tag_ids'
         ]
-        read_only_fields = ['id', 'created_at']
+        read_only_fields = ['id']
 
     def create(self, validated_data):
+        validated_data.pop('created_at', None)
         tags = validated_data.pop('tags', [])
         emotional_tags = validated_data.pop('emotional_tags', [])
 

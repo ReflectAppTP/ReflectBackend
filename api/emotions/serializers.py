@@ -15,6 +15,7 @@ class TagSerializer(serializers.ModelSerializer):
 class UserStateSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     emotional_tags = EmotionalTagSerializer(many=True, read_only=True)
+    created_at = serializers.DateTimeField(format='%Y-%m-%d %H:%M:%S')
 
     # Поля для записи (только ID)
     tag_ids = serializers.PrimaryKeyRelatedField(

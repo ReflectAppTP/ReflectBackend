@@ -51,7 +51,10 @@ class UserStateSerializer(serializers.ModelSerializer):
         tags = validated_data.pop('tags', [])
         emotional_tags = validated_data.pop('emotional_tags', [])
 
-        user_state = UserState.objects.create(**validated_data)
+        user_state = UserState.objects.create(
+            user=self.context['request'].user,
+            **validated_data
+        )
 
         # Создаем связи
         user_state.tags.set(tags)

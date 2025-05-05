@@ -8,6 +8,9 @@ class UserStateView(generics.ListCreateAPIView):
     serializer_class = UserStateSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
     def get_queryset(self):
         queryset = UserState.objects.filter(user=self.request.user)
 

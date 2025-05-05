@@ -13,7 +13,12 @@ class EmotionalTag(models.Model):
 
 
 class UserState(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='states')
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        null=False,  # Должно быть False
+        related_name='states'
+    )
     description = models.TextField(blank=True)
     value = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)

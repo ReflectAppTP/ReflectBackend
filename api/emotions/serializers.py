@@ -16,16 +16,18 @@ class UserStateSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     emotional_tags = EmotionalTagSerializer(many=True, read_only=True)
 
-    # Поля для записи (принимают ID)
-    tags = serializers.PrimaryKeyRelatedField(
+    # Поля для записи (только ID)
+    tag_ids = serializers.PrimaryKeyRelatedField(
         many=True,
         queryset=Tag.objects.all(),
+        source='tags',
         write_only=True,
         required=False
     )
-    emotional_tags = serializers.PrimaryKeyRelatedField(
+    emotional_tag_ids = serializers.PrimaryKeyRelatedField(
         many=True,
         queryset=EmotionalTag.objects.all(),
+        source='emotional_tags',
         write_only=True,
         required=False
     )
@@ -38,7 +40,9 @@ class UserStateSerializer(serializers.ModelSerializer):
             'value',
             'created_at',
             'tags',
-            'emotional_tags'
+            'emotional_tags',
+            'tag_ids',
+            'emotional_tag_ids'
         ]
         read_only_fields = ['id', 'created_at']
 

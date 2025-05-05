@@ -19,11 +19,19 @@ class UserState(models.Model):
 
     @property
     def tags(self):
-        return Tag.objects.filter(userstatetag__user_state=self)
+        return Tag.objects.filter(
+            id__in=UserStateTag.objects.filter(
+                user_state_id=self.id
+            ).values('tag_id')
+        )
 
     @property
     def emotional_tags(self):
-        return EmotionalTag.objects.filter(useremotionaltag__user_state=self)
+        return EmotionalTag.objects.filter(
+            id__in=UserEmotionalTag.objects.filter(
+                user_state_id=self.id
+            ).values('emotional_tag_id')
+        )
 
 
 class UserStateTag(models.Model):

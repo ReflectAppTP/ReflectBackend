@@ -11,16 +11,16 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 from datetime import timedelta
 from pathlib import Path
+from django.utils import timezone
+from pytz import timezone as pytz_timezone
 import os
 import time
-os.environ['TZ'] = 'Europe/Moscow'  # Укажите ваш часовой пояс
-time.tzset()
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
 
 TIME_ZONE = 'Europe/Moscow'
 USE_TZ = True
-
+BASE_DIR = Path(__file__).resolve().parent.parent
+os.environ['TZ'] = TIME_ZONE
+timezone.activate(pytz_timezone(TIME_ZONE))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 

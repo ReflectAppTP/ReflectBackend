@@ -20,10 +20,10 @@ class UserStateDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         return UserState.objects.filter(user=self.request.user)
 
-class EmotionalTagListView(generics.ListAPIView):
+class EmotionalTagListView(generics.ListCreateAPIView):
     queryset = EmotionalTag.objects.all()
     serializer_class = EmotionalTagSerializer
 
-class TagListView(generics.ListAPIView):
+class TagListView(generics.ListCreateAPIView):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer

@@ -11,27 +11,15 @@ class EmotionalTag(models.Model):
     name = models.CharField(max_length=50, unique=True)
     emoji = models.CharField(max_length=10, blank=True, null=True)
 
+
 class UserState(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='states')
     description = models.TextField(blank=True)
     value = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    @property
-    def tags(self):
-        return Tag.objects.filter(
-            id__in=UserStateTag.objects.filter(
-                user_state_id=self.id
-            ).values('tag_id')
-        )
-
-    @property
-    def emotional_tags(self):
-        return EmotionalTag.objects.filter(
-            id__in=UserEmotionalTag.objects.filter(
-                user_state_id=self.id
-            ).values('emotional_tag_id')
-        )
+    tags = models.ManyToManyField(Tag, through='UserStateTag', related_name='user_states')
+    emotional_tags = models.ManyToManyField(EmotionalTag, through='UserEmotionalTag', related_name='user_states')
 
 
 class UserStateTag(models.Model):

@@ -95,4 +95,8 @@ jobs:
         port: ${{ secrets.SSH_PORT || '22' }}
         script: |
           cd /home/goida/serverspace
-          docker-compose down && docker-compose up -d --build
+          # Безопасный down (не удаляет volumes и образы)
+          docker-compose down --remove-orphans
+          # Пересборка с кэшированием
+          docker-compose build --no-cache
+          docker-compose up -d

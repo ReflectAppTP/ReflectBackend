@@ -3,6 +3,7 @@ name: Django CI/CD
 on: [push]
 
 env:
+  PROJECT_DIR: /home/goida/serverspace/backend/ReflectBackend
   DOCKER_IMAGE: serverspace_web
   DOCKER_TAG: latest
   SECRETS_FILE: .env.prod
@@ -39,6 +40,7 @@ jobs:
         python manage.py test --noinput
 
   deploy:
+    needs: test
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -61,30 +63,20 @@ jobs:
         
         # Удаляем ключ после использования (опционально)
         rm -f ~/.ssh/deploy_key
-    - name: Install SSH Key
-      uses: shimataro/ssh-key-action@v2
-      with:
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        known_hosts: ${{ secrets.SSH_KNOWN_HOSTS || 'github.com' }}
-    
-    - name: Copy files to server
-      uses: appleboy/scp-action@v0.1.4
-      with:
-        host: ${{ secrets.SSH_HOST }}
-        username: ${{ secrets.SSH_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: ${{ secrets.SSH_PORT || '22' }}
-        source: "./"
-        target: "/home/goida/serverspace/backend/ReflectBackend"
-        rm: true
-        overwrite: true
-        
-    - name: Configure SSH
+    - name: Setup SSH
       run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
-        chmod 600 ~/.ssh/deploy_key
-        echo "${{ secrets.SSH_KNOWN_HOSTS }}" | base64 -d >> ~/.ssh/known_hosts
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          echo "${{ secrets.SSH_KNOWN_HOSTS }}" | base64 -d >> ~/.ssh/known_hosts
+
+    - name: Secure Copy Files
+      run: |
+        rsync -avz -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+          --exclude='.git' \
+          --exclude='.github' \
+          ./ \
+          ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:$PROJECT_DIR.new
     
     - name: Deploy via SSH
       uses: appleboy/ssh-action@master
@@ -94,9 +86,14 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: ${{ secrets.SSH_PORT || '22' }}
         script: |
+          if [ -d "$PROJECT_DIR" ]; then
+            sudo mv $PROJECT_DIR $PROJECT_DIR.backup
+          fi
+          sudo mv $PROJECT_DIR.new $PROJECT_DIR
           cd /home/goida/serverspace
           # Безопасный down (не удаляет volumes и образы)
           docker-compose down --remove-orphans
           # Пересборка с кэшированием
           docker-compose build --no-cache
           docker-compose up -d
+          rm -rf $PROJECT_DIR.backup

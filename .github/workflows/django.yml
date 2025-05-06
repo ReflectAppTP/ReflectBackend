@@ -88,15 +88,18 @@ jobs:
     
     - name: Restart containers
       uses: appleboy/ssh-action@master
-      env:
-        SSH_AUTH_SOCK: /tmp/ssh_agent.sock
       with:
         host: ${{ secrets.SSH_HOST }}
         username: ${{ secrets.SSH_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: ${{ secrets.SSH_PORT || '22' }}
         script: |
           cd /home/goida/serverspace/backend/ReflectBackend
+          # Копируем .env.prod если его нет
+          if [ ! -f .env.prod ]; then
+            cp .env.example .env.prod
+          fi
+          # Запускаем контейнеры
           docker-compose -f docker-compose.prod.yml down
           docker-compose -f docker-compose.prod.yml up -d --build
-          docker exec serverspace_web_1 python manage.py migrate --noinput
+          # Выполняем миграции внутри контейнера
+          docker exec -w /app serverspace_web_1 python manage.py migrate --noinput

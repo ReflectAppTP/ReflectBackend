@@ -1,5 +1,10 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.core.exceptions import ValidationError
+
+def validate_no_spaces(value):
+    if value.strip() != value or ' ' in value:
+        raise ValidationError("Пробелы запрещены")
 
 class UserManager(BaseUserManager):
     def create_user(self, username, email, password=None, **extra_fields):
@@ -16,8 +21,8 @@ class UserManager(BaseUserManager):
 
 class User(AbstractBaseUser):
     username = models.CharField(max_length=50, unique=True)
-    email = models.EmailField(max_length=100, unique=True)
-    password = models.CharField(max_length=256)
+    email = models.EmailField(max_length=100, unique=True, validators=[validate_no_spaces])
+    password = models.CharField(max_length=256, validators=[validate_no_spaces])
     created_at = models.DateTimeField(auto_now_add=True)
     is_admin = models.BooleanField(default=False)
     is_premium = models.BooleanField(default=False)

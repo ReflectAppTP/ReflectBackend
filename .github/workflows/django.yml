@@ -79,12 +79,24 @@ jobs:
         rm: true
         overwrite: true
         
+    - name: Configure SSH
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+        chmod 600 ~/.ssh/deploy_key
+        echo "${{ secrets.SSH_KNOWN_HOSTS }}" | base64 -d >> ~/.ssh/known_hosts
+    
     - name: Restart containers
       uses: appleboy/ssh-action@master
+      env:
+        SSH_AUTH_SOCK: /tmp/ssh_agent.sock
       with:
         host: ${{ secrets.SSH_HOST }}
         username: ${{ secrets.SSH_USER }}
-        key: ${{ secrets.SSH_KEY }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: ${{ secrets.SSH_PORT || '22' }}
         script: |
           cd /home/goida/serverspace/backend/ReflectBackend
+          docker-compose -f docker-compose.prod.yml down
           docker-compose -f docker-compose.prod.yml up -d --build
+          docker exec serverspace_web_1 python manage.py migrate --noinput

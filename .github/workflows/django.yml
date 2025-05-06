@@ -90,9 +90,5 @@ jobs:
       uses: appleboy/ssh-action@master
       with:
         script: |
-          cd /home/goida/serverspace/backend/ReflectBackend
-          docker-compose -f docker-compose.prod.yml down
-          docker-compose -f docker-compose.prod.yml up -d --build
-          sleep 10  # Ждем инициализации контейнеров
-          docker exec serverspace_web_1 python /app/manage.py migrate --noinput
-          docker exec serverspace_web_1 python /app/manage.py collectstatic --noinput
+          cd /home/goida/serverspace
+          docker-compose down && docker-compose up -d --build

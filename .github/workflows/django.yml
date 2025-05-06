@@ -87,9 +87,9 @@ jobs:
         echo "${{ secrets.SSH_KNOWN_HOSTS }}" | base64 -d >> ~/.ssh/known_hosts
     
     - name: Deploy via SSH
-      uses: appleboy/ssh-action@v1.1.7  # Явно указываем версию
+      uses: appleboy/ssh-action@v1.1.5  # Последняя стабильная версия
       with:
-        host: ${{ secrets.SSH_HOST }}   # Обязательный параметр
+        host: ${{ secrets.SSH_HOST }}
         username: ${{ secrets.SSH_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: ${{ secrets.SSH_PORT || '22' }}

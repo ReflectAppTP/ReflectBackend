@@ -61,14 +61,23 @@ jobs:
         
         # Удаляем ключ после использования (опционально)
         rm -f ~/.ssh/deploy_key
+    - name: Install SSH Key
+      uses: shimataro/ssh-key-action@v2
+      with:
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        known_hosts: ${{ secrets.SSH_KNOWN_HOSTS || 'github.com' }}
+    
     - name: Copy files to server
-      uses: appleboy/scp-action@master
+      uses: appleboy/scp-action@v0.1.4
       with:
         host: ${{ secrets.SSH_HOST }}
         username: ${{ secrets.SSH_USER }}
-        key: ${{ secrets.SSH_KEY }}
-        source: "."
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: ${{ secrets.SSH_PORT || '22' }}
+        source: "./"
         target: "/home/goida/serverspace/backend/ReflectBackend"
+        rm: true
+        overwrite: true
         
     - name: Restart containers
       uses: appleboy/ssh-action@master

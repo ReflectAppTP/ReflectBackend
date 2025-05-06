@@ -86,7 +86,13 @@ jobs:
         chmod 600 ~/.ssh/deploy_key
         echo "${{ secrets.SSH_KNOWN_HOSTS }}" | base64 -d >> ~/.ssh/known_hosts
     
-    - name: Deploy and migrate
-      run: |
-        cd /home/goida/serverspace
-        docker-compose down && docker-compose up -d --build
+    - name: Deploy via SSH
+      uses: appleboy/ssh-action@v1.1.7  # Явно указываем версию
+      with:
+        host: ${{ secrets.SSH_HOST }}   # Обязательный параметр
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: ${{ secrets.SSH_PORT || '22' }}
+        script: |
+          cd /home/goida/serverspace
+          docker-compose down && docker-compose up -d --build

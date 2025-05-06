@@ -87,8 +87,6 @@ jobs:
         echo "${{ secrets.SSH_KNOWN_HOSTS }}" | base64 -d >> ~/.ssh/known_hosts
     
     - name: Deploy and migrate
-      uses: appleboy/ssh-action@master
-      with:
-        script: |
-          cd /home/goida/serverspace
-          docker-compose down && docker-compose up -d --build
+      run: |
+        cd /home/goida/serverspace
+        docker-compose down && docker-compose up -d --build

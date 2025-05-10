@@ -1,5 +1,5 @@
 from rest_framework import generics, permissions
-from .models import EmotionalTag, Tag
+from .models import EmotionalTag, Tag, UserStateTag, UserEmotionalTag
 from .serializers import UserStateSerializer, EmotionalTagSerializer, TagSerializer
 from django.db.models import Count, Case, When, IntegerField
 from rest_framework.views import APIView
@@ -98,7 +98,6 @@ class MoodStatisticsView(APIView):
 
 class TagsStatisticsView(APIView):
     def get(self, request):
-
         start_date = request.query_params.get('start_date')
         end_date = request.query_params.get('end_date')
 
@@ -108,29 +107,30 @@ class TagsStatisticsView(APIView):
         except ValueError:
             return Response({"error": "Invalid date format. Use YYYY-MM-DD"}, status=400)
 
-        queryset = Tag.objects.filter(
-            userstatetag__user_state__user=request.user
+        # Используем UserStateTag для точного подсчёта
+        queryset = UserStateTag.objects.filter(
+            user_state__user=request.user
+
         )
 
         if start_date:
-            queryset = queryset.filter(
-                userstatetag__user_state__created_at__gte=start_date
-            )
+            queryset = queryset.filter(user_state__created_at__gte=start_date)
         if end_date:
-            queryset = queryset.filter(
-                userstatetag__user_state__created_at__lte=end_date
-            )
+            queryset = queryset.filter(user_state__created_at__lte=end_date)
 
-        top_tags = queryset.annotate(
-            freq=Count('userstatetag')
+        # Группируем по тегу и считаем уникальные записи состояний
+        top_tags = queryset.values(
+            'tag_id', 'tag__name', 'tag__emoji'
+        ).annotate(
+            freq=Count('user_state', distinct=True)
         ).order_by('-freq')[:5]
 
         result = [{
-            "id": tag.id,
-            "name": tag.name,
-            "emoji": tag.emoji,
-            "freq": tag.freq
-        } for tag in top_tags]
+            "id": item['tag_id'],
+            "name": item['tag__name'],
+            "emoji": item['tag__emoji'],
+            "freq": item['freq']
+        } for item in top_tags]
 
         return Response(result)
 
@@ -146,28 +146,28 @@ class EmotionalTagsStatisticsView(APIView):
         except ValueError:
             return Response({"error": "Invalid date format. Use YYYY-MM-DD"}, status=400)
 
-        queryset = EmotionalTag.objects.filter(
-            useremotionaltag__user_state__user=request.user
+        # Используем UserEmotionalTag для точного подсчёта
+        queryset = UserEmotionalTag.objects.filter(
+            user_state__user=request.user
         )
 
         if start_date:
-            queryset = queryset.filter(
-                useremotionaltag__user_state__created_at__gte=start_date
-            )
+            queryset = queryset.filter(user_state__created_at__gte=start_date)
         if end_date:
-            queryset = queryset.filter(
-                useremotionaltag__user_state__created_at__lte=end_date
-            )
+            queryset = queryset.filter(user_state__created_at__lte=end_date)
 
-        top_etags = queryset.annotate(
-            freq=Count('useremotionaltag')
+        # Группируем по эмоциональному тегу и считаем уникальные записи состояний
+        top_etags = queryset.values(
+            'emotional_tag_id', 'emotional_tag__name', 'emotional_tag__emoji'
+        ).annotate(
+            freq=Count('user_state', distinct=True)
         ).order_by('-freq')[:5]
 
         result = [{
-            "id": etag.id,
-            "name": etag.name,
-            "emoji": etag.emoji,
-            "freq": etag.freq
-        } for etag in top_etags]
+            "id": item['emotional_tag_id'],
+            "name": item['emotional_tag__name'],
+            "emoji": item['emotional_tag__emoji'],
+            "freq": item['freq']
+        } for item in top_etags]
 
         return Response(result)

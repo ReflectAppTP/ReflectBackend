@@ -94,3 +94,80 @@ class MoodStatisticsView(APIView):
         result = [{"state": item['mood_group'], "freq": item['freq']} for item in stats]
 
         return Response(result)
+
+
+class TagsStatisticsView(APIView):
+    def get(self, request):
+
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+
+        try:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d').date() if start_date else None
+            end_date = datetime.strptime(end_date, '%Y-%m-%d').date() if end_date else None
+        except ValueError:
+            return Response({"error": "Invalid date format. Use YYYY-MM-DD"}, status=400)
+
+        queryset = Tag.objects.filter(
+            userstatetag__user_state__user=request.user
+        )
+
+        if start_date:
+            queryset = queryset.filter(
+                userstatetag__user_state__created_at__gte=start_date
+            )
+        if end_date:
+            queryset = queryset.filter(
+                userstatetag__user_state__created_at__lte=end_date
+            )
+
+        top_tags = queryset.annotate(
+            freq=Count('userstatetag')
+        ).order_by('-freq')[:5]
+
+        result = [{
+            "id": tag.id,
+            "name": tag.name,
+            "emoji": tag.emoji,
+            "freq": tag.freq
+        } for tag in top_tags]
+
+        return Response(result)
+
+
+class EmotionalTagsStatisticsView(APIView):
+    def get(self, request):
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+
+        try:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d').date() if start_date else None
+            end_date = datetime.strptime(end_date, '%Y-%m-%d').date() if end_date else None
+        except ValueError:
+            return Response({"error": "Invalid date format. Use YYYY-MM-DD"}, status=400)
+
+        queryset = EmotionalTag.objects.filter(
+            useremotionaltag__user_state__user=request.user
+        )
+
+        if start_date:
+            queryset = queryset.filter(
+                useremotionaltag__user_state__created_at__gte=start_date
+            )
+        if end_date:
+            queryset = queryset.filter(
+                useremotionaltag__user_state__created_at__lte=end_date
+            )
+
+        top_etags = queryset.annotate(
+            freq=Count('useremotionaltag')
+        ).order_by('-freq')[:5]
+
+        result = [{
+            "id": etag.id,
+            "name": etag.name,
+            "emoji": etag.emoji,
+            "freq": etag.freq
+        } for etag in top_etags]
+
+        return Response(result)

@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import UserStateView, UserStateDetailView, EmotionalTagListView, TagListView, MoodStatisticsView
+from .views import UserStateView, UserStateDetailView, EmotionalTagListView, TagListView, MoodStatisticsView, TagsStatisticsView, EmotionalTagsStatisticsView
 
 urlpatterns = [
     path('states/', UserStateView.as_view(), name='userstate-list'),
@@ -7,4 +7,7 @@ urlpatterns = [
     path('emotional-tags/', EmotionalTagListView.as_view(), name='emotional-tags-list'),
     path('tags/', TagListView.as_view(), name='tags-list'),
     path('statistics/mood/', MoodStatisticsView.as_view(), name='mood-statistics'),
+    path('statistics/tags/', TagsStatisticsView.as_view(), name='tags-statistics'),
+    path('statistics/emotional-tags/', EmotionalTagsStatisticsView.as_view(), name='emotional-tags-statistics'),
+
 ]

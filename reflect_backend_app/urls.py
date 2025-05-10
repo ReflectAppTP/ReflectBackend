@@ -9,6 +9,5 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/friends/', include('api.friends.urls')),
     path('api/ai/', include('api.ai.urls')),
-    path('api/profileReflect/', include('api.profileReflect.urls')),
-    path('api/statisticsReflect/', include('api.statisticsReflect.urls'))
+    path('api/profileReflect/', include('api.profileReflect.urls'))
 ]

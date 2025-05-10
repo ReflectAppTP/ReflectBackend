@@ -47,13 +47,12 @@ class UserStateSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'tags', 'emotional_tags']
 
     def create(self, validated_data):
-        # Убедимся, что created_at не передается
+
         validated_data.pop('created_at', None)
         validated_data['created_at'] = timezone.localtime(timezone.now())
         tags = validated_data.pop('tags', [])
         emotional_tags = validated_data.pop('emotional_tags', [])
 
-        # Пользователь уже в validated_data благодаря perform_create
         user_state = UserState.objects.create(**validated_data)
 
         user_state.tags.set(tags)

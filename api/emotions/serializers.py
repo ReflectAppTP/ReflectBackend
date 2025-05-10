@@ -44,7 +44,7 @@ class UserStateSerializer(serializers.ModelSerializer):
             'tag_ids',
             'emotional_tag_ids'
         ]
-        read_only_fields = ['id', 'created_at']
+        read_only_fields = ['id', 'created_at', 'tags', 'emotional_tags']
 
     def create(self, validated_data):
         # Убедимся, что created_at не передается

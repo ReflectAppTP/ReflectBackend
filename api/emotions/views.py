@@ -6,6 +6,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db.models.functions import Cast, TruncDate
 from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
+
 
 class UserStateView(generics.ListCreateAPIView):
     serializer_class = UserStateSerializer
@@ -173,37 +175,64 @@ class EmotionalTagsStatisticsView(APIView):
         return Response(result)
 
 
-class MoodAverageStatisticsView(APIView):
+class WeeklyMoodStatsView(APIView):
     def get(self, request):
         today = datetime.now().date()
+        start_date = today - timedelta(days=7)
 
-        periods = {
-            'week': today - timedelta(days=7),
-            'month': today - timedelta(days=30),
-            'year': today - timedelta(days=365)
-        }
+        stats = UserState.objects.filter(
+            user=request.user,
+            created_at__date__gte=start_date,
+            created_at__date__lt=today
+        ).annotate(
+            date=TruncDate('created_at')
+        ).values('date').annotate(
+            avg_mood=Avg('value')
+        ).order_by('date')
 
-        result = {}
+        return Response([{
+            "date": item['date'].strftime('%Y-%m-%d'),
+            "average_mood": round(item['avg_mood'], 2)
+        } for item in stats])
 
-        for period_name, start_date in periods.items():
-            # Получаем среднее по дням
-            daily_avg = UserState.objects.filter(
-                user=request.user,
-                created_at__date__gte=start_date,
-                created_at__date__lt=today
-            ).annotate(
-                date=Cast(TruncDate('created_at'), DateField())
-            ).values('date').annotate(
-                avg_value=Avg('value')
-            ).order_by('date')
 
-            # Форматируем результат
-            result[period_name] = [
-                {
-                    "date": item['date'].strftime('%Y-%m-%d'),
-                    "average_mood": round(item['avg_value'], 2)
-                }
-                for item in daily_avg
-            ]
+class MonthlyMoodStatsView(APIView):
+    def get(self, request):
+        today = datetime.now().date()
+        start_date = today - relativedelta(months=1)
 
-        return Response(result)
+        stats = UserState.objects.filter(
+            user=request.user,
+            created_at__date__gte=start_date,
+            created_at__date__lt=today
+        ).annotate(
+            date=TruncDate('created_at')
+        ).values('date').annotate(
+            avg_mood=Avg('value')
+        ).order_by('date')
+
+        return Response([{
+            "date": item['date'].strftime('%Y-%m-%d'),
+            "average_mood": round(item['avg_mood'], 2)
+        } for item in stats])
+
+
+class YearlyMoodStatsView(APIView):
+    def get(self, request):
+        today = datetime.now().date()
+        start_date = today - relativedelta(years=1)
+
+        stats = UserState.objects.filter(
+            user=request.user,
+            created_at__date__gte=start_date,
+            created_at__date__lt=today
+        ).annotate(
+            date=TruncDate('created_at')
+        ).values('date').annotate(
+            avg_mood=Avg('value')
+        ).order_by('date')
+
+        return Response([{
+            "date": item['date'].strftime('%Y-%m-%d'),
+            "average_mood": round(item['avg_mood'], 2)
+        } for item in stats])

@@ -178,12 +178,11 @@ class EmotionalTagsStatisticsView(APIView):
 class WeeklyMoodStatsView(APIView):
     def get(self, request):
         today = datetime.now().date()
-        start_date = today - timedelta(days=7)
+        start_date = today - timedelta(days=6)
 
         stats = UserState.objects.filter(
             user=request.user,
-            created_at__date__gte=start_date,
-            created_at__date__lt=today
+            created_at__date__range=(start_date, today)
         ).annotate(
             date=TruncDate('created_at')
         ).values('date').annotate(
@@ -199,12 +198,11 @@ class WeeklyMoodStatsView(APIView):
 class MonthlyMoodStatsView(APIView):
     def get(self, request):
         today = datetime.now().date()
-        start_date = today - relativedelta(months=1)
+        start_date = today - relativedelta(months=1) + timedelta(days=1)
 
         stats = UserState.objects.filter(
             user=request.user,
-            created_at__date__gte=start_date,
-            created_at__date__lt=today
+            created_at__date__range=(start_date, today)
         ).annotate(
             date=TruncDate('created_at')
         ).values('date').annotate(
@@ -220,12 +218,11 @@ class MonthlyMoodStatsView(APIView):
 class YearlyMoodStatsView(APIView):
     def get(self, request):
         today = datetime.now().date()
-        start_date = today - relativedelta(years=1)
+        start_date = today - relativedelta(years=1) + timedelta(days=1)
 
         stats = UserState.objects.filter(
             user=request.user,
-            created_at__date__gte=start_date,
-            created_at__date__lt=today
+            created_at__date__range=(start_date, today)
         ).annotate(
             date=TruncDate('created_at')
         ).values('date').annotate(

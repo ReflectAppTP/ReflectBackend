@@ -1,11 +1,11 @@
 from rest_framework import generics, permissions
-from .models import EmotionalTag, Tag, UserStateTag, UserEmotionalTag
+from .models import EmotionalTag, Tag, UserStateTag, UserEmotionalTag, UserState
 from .serializers import UserStateSerializer, EmotionalTagSerializer, TagSerializer
-from django.db.models import Count, Case, When, IntegerField
+from django.db.models import Count, Case, When, IntegerField, Avg, DateField
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from datetime import datetime
-from .models import UserState
+from django.db.models.functions import Cast, TruncDate
+from datetime import datetime, timedelta
 
 class UserStateView(generics.ListCreateAPIView):
     serializer_class = UserStateSerializer
@@ -169,5 +169,41 @@ class EmotionalTagsStatisticsView(APIView):
             "emoji": item['emotional_tag__emoji'],
             "freq": item['freq']
         } for item in top_etags]
+
+        return Response(result)
+
+
+class MoodAverageStatisticsView(APIView):
+    def get(self, request):
+        today = datetime.now().date()
+
+        periods = {
+            'week': today - timedelta(days=7),
+            'month': today - timedelta(days=30),
+            'year': today - timedelta(days=365)
+        }
+
+        result = {}
+
+        for period_name, start_date in periods.items():
+            # Получаем среднее по дням
+            daily_avg = UserState.objects.filter(
+                user=request.user,
+                created_at__date__gte=start_date,
+                created_at__date__lt=today
+            ).annotate(
+                date=Cast(TruncDate('created_at'), DateField())
+            ).values('date').annotate(
+                avg_value=Avg('value')
+            ).order_by('date')
+
+            # Форматируем результат
+            result[period_name] = [
+                {
+                    "date": item['date'].strftime('%Y-%m-%d'),
+                    "average_mood": round(item['avg_value'], 2)
+                }
+                for item in daily_avg
+            ]
 
         return Response(result)

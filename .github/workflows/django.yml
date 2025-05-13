@@ -86,7 +86,7 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: ${{ secrets.SSH_PORT || '22' }}
         script: |
-          cd /home/goida/serverspace/ReflectBackend
+          cd /home/goida/serverspace/backend/ReflectBackend
           git fetch
           git pull
           # Безопасный down (не удаляет volumes и образы)

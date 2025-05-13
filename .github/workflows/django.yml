@@ -86,11 +86,9 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: ${{ secrets.SSH_PORT || '22' }}
         script: |
-          if [ -d "$PROJECT_DIR" ]; then
-            sudo mv $PROJECT_DIR $PROJECT_DIR.backup
-          fi
-          sudo mv $PROJECT_DIR.new $PROJECT_DIR
           cd /home/goida/serverspace
+          git fetch
+          git pull
           # Безопасный down (не удаляет volumes и образы)
           docker-compose down --remove-orphans
           # Пересборка с кэшированием

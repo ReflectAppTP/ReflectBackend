@@ -80,9 +80,9 @@ class MoodStatisticsView(APIView):
         # Группировка значений по шкале 1-5
         stats = queryset.annotate(
             mood_group=Case(
-                When(value__lte=2, then=1),
-                When(value__range=(3, 4), then=2),
-                When(value__range=(5, 6), then=3),
+                When(value__lte=1, then=1),
+                When(value__range=(2, 3), then=2),
+                When(value__range=(4, 6), then=3),
                 When(value__range=(7, 8), then=4),
                 When(value__gte=9, then=5),
                 default=0,

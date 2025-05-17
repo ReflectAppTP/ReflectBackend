@@ -16,3 +16,15 @@ class DeepSeekAnalysis(models.Model):
             models.Index(fields=['correlation_id']),
             models.Index(fields=['user', 'status']),
         ]
+
+class ChatMessage(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    message_id = models.UUIDField(unique=True)
+    content = models.TextField()
+    response = models.TextField(null=True)
+    status = models.CharField(
+        max_length=20,
+        choices=[('pending', 'Pending'), ('processed', 'Processed'), ('failed', 'Failed')],
+        default='pending'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)

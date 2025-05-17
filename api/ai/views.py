@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.conf import settings
 from api.emotions.models import UserState  # Используем существующую модель
-from .models import DeepSeekAnalysis
+from .models import DeepSeekAnalysis, ChatMessage
 import pika
 import uuid
 import json
@@ -103,3 +103,64 @@ class DeepSeekResultView(APIView):
                 {"error": "Analysis not found"},
                 status=status.HTTP_404_NOT_FOUND
             )
+
+
+class ChatSendView(APIView):
+    def post(self, request):
+        user = request.user
+        content = request.data.get('content')
+
+        if not content:
+            return Response({"error": "Content is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Сохраняем сообщение в БД
+        message = ChatMessage.objects.create(
+            user=user,
+            message_id=uuid.uuid4(),
+            content=content,
+            status='pending'
+        )
+
+        # Отправляем в RabbitMQ
+        connection = pika.BlockingConnection(
+            pika.ConnectionParameters(
+                host=settings.RABBITMQ['HOST'],
+                credentials=pika.PlainCredentials(
+                    settings.RABBITMQ['USER'],
+                    settings.RABBITMQ['PASSWORD']
+                )
+            )
+        )
+        channel = connection.channel()
+
+        channel.basic_publish(
+            exchange='chat_exchange',
+            routing_key='chat_requests',
+            body=json.dumps({
+                'message_id': str(message.message_id),
+                'user_id': user.id,
+                'content': content
+            })
+        )
+
+        connection.close()
+
+        return Response({
+            "message_id": message.message_id,
+            "status": "queued"
+        }, status=status.HTTP_202_ACCEPTED)
+
+
+class ChatStatusView(APIView):
+    def get(self, request, message_id):
+        try:
+            message = ChatMessage.objects.get(
+                message_id=message_id,
+                user=request.user
+            )
+            return Response({
+                "status": message.status,
+                "response": message.response if message.status == 'processed' else None
+            })
+        except ChatMessage.DoesNotExist:
+            return Response({"error": "Message not found"}, status=404)

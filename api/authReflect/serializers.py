@@ -13,7 +13,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 class RegisterSerializer(serializers.ModelSerializer):
     email = serializers.CharField()
-    password = serializers.CharField(write_only=True, min_length=8)
+    password = serializers.CharField(write_only=True, min_length=6)
     def validate_email(self, value):
         if value.strip() != value:
             raise serializers.ValidationError("Email не должен содержать пробелов по краям")

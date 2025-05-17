@@ -47,7 +47,8 @@ INSTALLED_APPS = [
     'api.authReflect',
     'api.emotions',
     'rest_framework.authtoken',
-    'rest_framework_simplejwt.token_blacklist'
+    'rest_framework_simplejwt.token_blacklist',
+    'api.ai'
 ]
 RABBITMQ = {
     'HOST': '185.185.71.233',  # Ваш сервер

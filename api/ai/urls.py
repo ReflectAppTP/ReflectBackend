@@ -1,7 +1,7 @@
 from django.urls import path
-from . import views
+from .views import DeepSeekRequestView, DeepSeekResultView
 
 urlpatterns = [
-    path('trends/', views.ai_trends, name='ai-trends'),
-    path('advice/', views.ai_advice, name='ai-advice'),
+    path('analyze/', DeepSeekRequestView.as_view(), name='deepseek-request'),
+    path('results/<str:correlation_id>/', DeepSeekResultView.as_view(), name='deepseek-result'),
 ]

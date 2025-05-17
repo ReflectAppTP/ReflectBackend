@@ -49,7 +49,15 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'rest_framework_simplejwt.token_blacklist'
 ]
-
+RABBITMQ = {
+    'HOST': '185.185.71.233',  # Ваш сервер
+    'PORT': 5672,
+    'USER': 'raivanin',
+    'PASSWORD': 'akeruwerawnitu',  # Пароль из docker-compose
+    'EXCHANGE': 'deepseek_exchange',
+    'REQUEST_QUEUE': 'deepseek_requests',
+    'RESPONSE_QUEUE': 'deepseek_results'
+}
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',

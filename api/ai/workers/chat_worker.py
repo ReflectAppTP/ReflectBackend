@@ -1,11 +1,15 @@
 import httpx
 import json
 import os
+
+from pika import channel, callback
 from pika.exceptions import AMQPConnectionError
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 DEEPSEEK_MODEL = "deepseek-ai/deepseek-r1"  # Идентификатор модели на OpenRouter
 
+channel.queue_declare(queue='chat_requests', durable=True)
+channel.basic_consume(queue='chat_requests', on_message_callback=callback)
 
 async def process_message(ch, method, properties, body):
     try:

@@ -17,9 +17,16 @@ class DeepSeekAnalysis(models.Model):
             models.Index(fields=['user', 'status']),
         ]
 
+
 class ChatMessage(models.Model):
+    ROLE_CHOICES = [
+        ('user', 'User'),
+        ('assistant', 'Assistant'),
+    ]
+
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     message_id = models.UUIDField(unique=True)
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='user')
     content = models.TextField()
     response = models.TextField(null=True)
     status = models.CharField(
@@ -28,3 +35,6 @@ class ChatMessage(models.Model):
         default='pending'
     )
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']

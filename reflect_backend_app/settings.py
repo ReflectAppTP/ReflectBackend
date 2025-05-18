@@ -59,6 +59,10 @@ RABBITMQ = {
     'REQUEST_QUEUE': 'deepseek_requests',
     'RESPONSE_QUEUE': 'deepseek_results'
 }
+OPENROUTER_API_KEY = os.getenv('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')
+OPENROUTER_REFERER_URL = os.getenv('OPENROUTER_REFERER_URL', 'http://185.185.71.233')
+OPENROUTER_APP_NAME = os.getenv('OPENROUTER_APP_NAME', 'Reflect App')
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',

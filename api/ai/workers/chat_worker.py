@@ -8,7 +8,7 @@ from aio_pika.abc import AbstractIncomingMessage
 # Конфигурация
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 RABBITMQ_URL = f"amqp://{os.getenv('RABBITMQ_USER', 'admin')}:{os.getenv('RABBITMQ_PASS', 'password')}@{os.getenv('RABBITMQ_HOST', 'rabbitmq')}/"
-DEEPSEEK_MODEL = "deepseek-ai/deepseek-r1"
+DEEPSEEK_MODEL = "deepseek/deepseek-r1:free"
 
 
 async def process_message(message: AbstractIncomingMessage):
@@ -27,8 +27,6 @@ async def process_message(message: AbstractIncomingMessage):
                     "https://openrouter.ai/api/v1/chat/completions",
                     headers={
                         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-                        "HTTP-Referer": "https://your-app.com",
-                        "X-Title": "Reflect"
                     },
                     json={
                         "model": DEEPSEEK_MODEL,

@@ -1,23 +1,27 @@
-import json
 import os
+import django
+import sys
 
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'reflect_backend_app.settings')
+django.setup()
+
+import json
 import pika
 from django.conf import settings
 from models import ChatMessage
 from deepseek_service import DeepSeekService
 
-RABBITMQ_HOST = os.getenv('RABBITMQ_HOST')
-RABBITMQ_USER = os.getenv('RABBITMQ_USER')
-RABBITMQ_PASSWORD = os.getenv('RABBITMQ_PASSWORD')
 
 class ChatConsumer:
     def __init__(self):
         self.connection = pika.BlockingConnection(
             pika.ConnectionParameters(
-                host=RABBITMQ_HOST,
+                host=settings.RABBITMQ['HOST'],
                 credentials=pika.PlainCredentials(
-                    RABBITMQ_USER,
-                    RABBITMQ_PASSWORD
+                    settings.RABBITMQ['USER'],
+                    settings.RABBITMQ['PASSWORD']
                 )
             )
         )

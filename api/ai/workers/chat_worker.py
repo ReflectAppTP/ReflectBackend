@@ -66,10 +66,10 @@ async def send_reply(reply_to: str, message_id: str, content: str):
 async def get_rabbitmq_connection():
     print('ЫЫАЫААЫЫЫААЫАЫЫ')
     return await aio_pika.connect_robust(
-        host=settings.RABBITMQ['HOST'],
-        port=settings.RABBITMQ['PORT'],
-        login=settings.RABBITMQ['USER'],
-        password=settings.RABBITMQ['PASSWORD'],
+        host="185.185.71.233",
+        port="5672",
+        login="raivanin",
+        password="akeruwerawnitu",
         # virtualhost="/",  # или settings.RABBITMQ.get('VHOST', '/')
         timeout=10  # сек
     )

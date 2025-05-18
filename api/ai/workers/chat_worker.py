@@ -69,6 +69,8 @@ async def send_reply(reply_to: str, message_id: str, content: str):
 
 async def main():
     while True:
+        print(f"Connecting to RabbitMQ at {RABBITMQ_URL}")
+
         try:
             connection = await aio_pika.connect_robust(RABBITMQ_URL)
             print("Connected to RabbitMQ")

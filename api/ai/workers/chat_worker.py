@@ -3,12 +3,8 @@ import json
 import asyncio
 import aio_pika
 import httpx
+from django.conf import settings
 from aio_pika.abc import AbstractIncomingMessage
-
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-# RABBITMQ_URL = f"amqp://{os.getenv('RABBITMQ_USER', 'admin')}:{os.getenv('RABBITMQ_PASS', 'password')}@{os.getenv('RABBITMQ_HOST', 'rabbitmq')}/"
-RABBITMQ_URL = f"amqp://raivanin:akeruwerawnitu@rabbitmq:5672/"
-DEEPSEEK_MODEL = "deepseek/deepseek-r1:free"
 
 
 async def process_message(message: AbstractIncomingMessage):
@@ -21,16 +17,17 @@ async def process_message(message: AbstractIncomingMessage):
 
             print(f"Processing message {message_id}")
 
+            # Запрос к OpenRouter
             async with httpx.AsyncClient() as client:
                 response = await client.post(
                     "https://openrouter.ai/api/v1/chat/completions",
                     headers={
-                        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                        "Authorization": f"Bearer {os.getenv('OPENROUTER_API_KEY')}",
                         "HTTP-Referer": "https://your-app.com",
                         "X-Title": "Reflect"
                     },
                     json={
-                        "model": DEEPSEEK_MODEL,
+                        "model": "deepseek-ai/deepseek-r1",
                         "messages": [{"role": "user", "content": prompt}]
                     },
                     timeout=30.0
@@ -40,19 +37,18 @@ async def process_message(message: AbstractIncomingMessage):
                     result = response.json()
                     reply_content = result["choices"][0]["message"]["content"]
 
+                    # Отправка ответа
                     await send_reply(reply_to, message_id, reply_content)
-                    print(f"Successfully processed message {message_id}")
+                    print(f"Processed message {message_id}")
                 else:
-                    print(f"OpenRouter error: {response.status_code} - {response.text}")
-
+                    print(f"OpenRouter error: {response.text}")
 
     except Exception as e:
         print(f"Error processing message: {e}")
 
 
-
 async def send_reply(reply_to: str, message_id: str, content: str):
-    connection = await aio_pika.connect_robust(RABBITMQ_URL)
+    connection = await get_rabbitmq_connection()
     async with connection:
         channel = await connection.channel()
 
@@ -68,12 +64,23 @@ async def send_reply(reply_to: str, message_id: str, content: str):
         )
 
 
+async def get_rabbitmq_connection():
+    """Создает подключение к RabbitMQ с настройками из Django"""
+    return await aio_pika.connect_robust(
+        host=settings.RABBITMQ['HOST'],
+        port=settings.RABBITMQ['PORT'],
+        login=settings.RABBITMQ['USER'],
+        password=settings.RABBITMQ['PASSWORD'],
+        virtualhost="/",  # или settings.RABBITMQ.get('VHOST', '/')
+        timeout=10  # сек
+    )
+
+
 async def main():
     while True:
-        print(f"Connecting to RabbitMQ at {RABBITMQ_URL}")
-
         try:
-            connection = await aio_pika.connect_robust(RABBITMQ_URL)
+            # Подключение с настройками из Django
+            connection = await get_rabbitmq_connection()
             print("Connected to RabbitMQ")
 
             async with connection:
@@ -81,11 +88,11 @@ async def main():
                 await channel.set_qos(prefetch_count=1)
 
                 queue = await channel.declare_queue(
-                    "chat_requests",
+                    settings.RABBITMQ['REQUEST_QUEUE'],
                     durable=True
                 )
 
-                print("Waiting for messages...")
+                print(f"Waiting for messages in {settings.RABBITMQ['REQUEST_QUEUE']}...")
                 await queue.consume(process_message)
 
                 await asyncio.Future()
@@ -99,4 +106,11 @@ async def main():
 
 
 if __name__ == "__main__":
+    # Инициализация Django
+    import os
+    import django
+
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'your_project.settings')
+    django.setup()
+
     asyncio.run(main())

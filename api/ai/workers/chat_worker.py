@@ -5,7 +5,6 @@ import aio_pika
 import httpx
 from django.conf import settings
 from aio_pika.abc import AbstractIncomingMessage
-import reflect_backend_app
 
 async def process_message(message: AbstractIncomingMessage):
     try:
@@ -65,7 +64,7 @@ async def send_reply(reply_to: str, message_id: str, content: str):
 
 
 async def get_rabbitmq_connection():
-    """Создает подключение к RabbitMQ с настройками из Django"""
+    print('ЫЫАЫААЫЫЫААЫАЫЫ')
     return await aio_pika.connect_robust(
         host=settings.RABBITMQ['HOST'],
         port=settings.RABBITMQ['PORT'],
@@ -79,6 +78,7 @@ async def get_rabbitmq_connection():
 async def main():
     while True:
         try:
+            print('ыыыаыаыыыыыаы')
             # Подключение с настройками из Django
             connection = await get_rabbitmq_connection()
             print("Connected to RabbitMQ")
@@ -99,10 +99,10 @@ async def main():
 
         except ConnectionError:
             print("RabbitMQ connection error, retrying in 5 seconds...")
-            await asyncio.sleep(5)
+            return
         except Exception as e:
             print(f"Unexpected error: {e}")
-            await asyncio.sleep(5)
+            return
 
 
 if __name__ == "__main__":
@@ -110,7 +110,7 @@ if __name__ == "__main__":
     import os
     import django
 
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'reflect_backend_app.settings')
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'settings')
     django.setup()
 
     asyncio.run(main())

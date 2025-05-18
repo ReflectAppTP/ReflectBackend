@@ -2,10 +2,8 @@ import os
 import requests
 from django.conf import settings
 
-
+OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 class DeepSeekService:
-    OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
-
     @staticmethod
     def get_response(messages):
         headers = {
@@ -24,7 +22,7 @@ class DeepSeekService:
 
         try:
             response = requests.post(
-                self.OPENROUTER_API_URL,
+                OPENROUTER_API_URL,
                 headers=headers,
                 json=payload
             )

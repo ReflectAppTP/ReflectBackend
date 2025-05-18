@@ -5,7 +5,7 @@ import aio_pika
 import httpx
 from django.conf import settings
 from aio_pika.abc import AbstractIncomingMessage
-
+import reflect_backend_app
 
 async def process_message(message: AbstractIncomingMessage):
     try:
@@ -27,7 +27,7 @@ async def process_message(message: AbstractIncomingMessage):
                         "X-Title": "Reflect"
                     },
                     json={
-                        "model": "deepseek-ai/deepseek-r1",
+                        "model": "deepseek/deepseek-r1:free",
                         "messages": [{"role": "user", "content": prompt}]
                     },
                     timeout=30.0
@@ -110,7 +110,7 @@ if __name__ == "__main__":
     import os
     import django
 
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'your_project.settings')
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'reflect_backend_app.settings')
     django.setup()
 
     asyncio.run(main())

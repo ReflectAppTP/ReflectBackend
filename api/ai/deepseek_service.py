@@ -7,7 +7,7 @@ class DeepSeekService:
     @staticmethod
     def get_response(messages):
         headers = {
-            "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
+            "Authorization": f"Bearer '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'",
             "HTTP-Referer": settings.OPENROUTER_REFERER_URL,
             "X-Title": settings.OPENROUTER_APP_NAME,
             "Content-Type": "application/json"

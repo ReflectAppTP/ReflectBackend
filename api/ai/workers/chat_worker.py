@@ -5,15 +5,14 @@ import aio_pika
 import httpx
 from aio_pika.abc import AbstractIncomingMessage
 
-# Конфигурация
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 RABBITMQ_URL = f"amqp://{os.getenv('RABBITMQ_USER', 'admin')}:{os.getenv('RABBITMQ_PASS', 'password')}@{os.getenv('RABBITMQ_HOST', 'rabbitmq')}/"
 DEEPSEEK_MODEL = "deepseek/deepseek-r1:free"
 
 
 async def process_message(message: AbstractIncomingMessage):
-    async with message.process():
-        try:
+    try:
+        async with message.process(requeue=False):
             data = json.loads(message.body.decode())
             message_id = data["message_id"]
             prompt = data["content"]
@@ -21,12 +20,13 @@ async def process_message(message: AbstractIncomingMessage):
 
             print(f"Processing message {message_id}")
 
-            # Запрос к OpenRouter
             async with httpx.AsyncClient() as client:
                 response = await client.post(
                     "https://openrouter.ai/api/v1/chat/completions",
                     headers={
                         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                        "HTTP-Referer": "https://your-app.com",
+                        "X-Title": "Reflect"
                     },
                     json={
                         "model": DEEPSEEK_MODEL,
@@ -39,16 +39,15 @@ async def process_message(message: AbstractIncomingMessage):
                     result = response.json()
                     reply_content = result["choices"][0]["message"]["content"]
 
-                    # Отправка ответа
                     await send_reply(reply_to, message_id, reply_content)
-                    print(f"Processed message {message_id}")
+                    print(f"Successfully processed message {message_id}")
                 else:
-                    print(f"OpenRouter error: {response.text}")
-                    await message.nack(requeue=False)
+                    print(f"OpenRouter error: {response.status_code} - {response.text}")
 
-        except Exception as e:
-            print(f"Error processing message: {e}")
-            await message.nack(requeue=False)
+
+    except Exception as e:
+        print(f"Error processing message: {e}")
+
 
 
 async def send_reply(reply_to: str, message_id: str, content: str):
@@ -71,7 +70,6 @@ async def send_reply(reply_to: str, message_id: str, content: str):
 async def main():
     while True:
         try:
-            # Подключение к RabbitMQ
             connection = await aio_pika.connect_robust(RABBITMQ_URL)
             print("Connected to RabbitMQ")
 
@@ -87,7 +85,6 @@ async def main():
                 print("Waiting for messages...")
                 await queue.consume(process_message)
 
-                # Бесконечное ожидание
                 await asyncio.Future()
 
         except ConnectionError:

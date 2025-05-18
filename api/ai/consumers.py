@@ -1,18 +1,23 @@
 import json
+import os
+
 import pika
 from django.conf import settings
-from api.ai.models import ChatMessage
-from .deepseek_service import DeepSeekService
+from models import ChatMessage
+from deepseek_service import DeepSeekService
 
+RABBITMQ_HOST = os.getenv('RABBITMQ_HOST')
+RABBITMQ_USER = os.getenv('RABBITMQ_USER')
+RABBITMQ_PASSWORD = os.getenv('RABBITMQ_PASSWORD')
 
 class ChatConsumer:
     def __init__(self):
         self.connection = pika.BlockingConnection(
             pika.ConnectionParameters(
-                host=settings.RABBITMQ['HOST'],
+                host=RABBITMQ_HOST,
                 credentials=pika.PlainCredentials(
-                    settings.RABBITMQ['USER'],
-                    settings.RABBITMQ['PASSWORD']
+                    RABBITMQ_USER,
+                    RABBITMQ_PASSWORD
                 )
             )
         )

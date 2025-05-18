@@ -51,10 +51,10 @@ INSTALLED_APPS = [
     'api.ai'
 ]
 RABBITMQ = {
-    'HOST': '185.185.71.233',  # Ваш сервер
+    'HOST': '185.185.71.233',
     'PORT': 5672,
     'USER': 'raivanin',
-    'PASSWORD': 'akeruwerawnitu',  # Пароль из docker-compose
+    'PASSWORD': 'akeruwerawnitu',
     'EXCHANGE': 'deepseek_exchange',
     'REQUEST_QUEUE': 'deepseek_requests',
     'RESPONSE_QUEUE': 'deepseek_results'

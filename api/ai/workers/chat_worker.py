@@ -6,7 +6,8 @@ import httpx
 from aio_pika.abc import AbstractIncomingMessage
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-RABBITMQ_URL = f"amqp://{os.getenv('RABBITMQ_USER', 'admin')}:{os.getenv('RABBITMQ_PASS', 'password')}@{os.getenv('RABBITMQ_HOST', 'rabbitmq')}/"
+# RABBITMQ_URL = f"amqp://{os.getenv('RABBITMQ_USER', 'admin')}:{os.getenv('RABBITMQ_PASS', 'password')}@{os.getenv('RABBITMQ_HOST', 'rabbitmq')}/"
+RABBITMQ_URL = f"amqp://raivanin:akeruwerawnitu@rabbitmq:5672/"
 DEEPSEEK_MODEL = "deepseek/deepseek-r1:free"
 
 

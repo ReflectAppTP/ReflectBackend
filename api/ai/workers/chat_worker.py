@@ -70,7 +70,7 @@ async def get_rabbitmq_connection():
         port=settings.RABBITMQ['PORT'],
         login=settings.RABBITMQ['USER'],
         password=settings.RABBITMQ['PASSWORD'],
-        virtualhost="/",  # или settings.RABBITMQ.get('VHOST', '/')
+        # virtualhost="/",  # или settings.RABBITMQ.get('VHOST', '/')
         timeout=10  # сек
     )
 

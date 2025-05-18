@@ -10,7 +10,7 @@ django.setup()
 import json
 import pika
 from django.conf import settings
-from models import ChatMessage
+
 from deepseek_service import DeepSeekService
 
 

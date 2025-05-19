@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+import uuid
 
 User = get_user_model()
 
@@ -19,12 +20,18 @@ User = get_user_model()
 #         ]
 #
 
+class ChatSession(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    session_id = models.UUIDField(default=uuid.uuid4, editable=False)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
 class ChatMessage(models.Model):
     ROLE_CHOICES = [
         ('user', 'User'),
         ('assistant', 'Assistant'),
     ]
-
+    session = models.ForeignKey(ChatSession, related_name='messages', on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     message_id = models.UUIDField(unique=True)
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='user')

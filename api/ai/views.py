@@ -1,13 +1,30 @@
+from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.conf import settings
 from api.emotions.models import UserState  # Используем существующую модель
-from .models import DeepSeekAnalysis, ChatMessage
+from .models import DeepSeekAnalysis, ChatMessage, ChatSession
 import pika
 import uuid
 import json
 
+
+@api_view(['POST'])
+def reset_chat_session(request):
+    # Закрываем текущую сессию
+    ChatSession.objects.filter(
+        user=request.user,
+        is_active=True
+    ).update(is_active=False)
+
+    # Создаем новую
+    new_session = ChatSession.objects.create(user=request.user)
+
+    return Response({
+        "session_id": new_session.session_id,
+        "message": "Chat session reset"
+    })
 
 class DeepSeekRequestView(APIView):
     """
@@ -164,3 +181,4 @@ class ChatStatusView(APIView):
             })
         except ChatMessage.DoesNotExist:
             return Response({"error": "Message not found"}, status=404)
+

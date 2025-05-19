@@ -6,7 +6,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'reflect_backend_app.settings')
 django.setup()
-from api.ai.models import ChatMessage
+from api.ai.models import ChatMessage, ChatSession
 
 import json
 import pika
@@ -44,12 +44,48 @@ class ChatConsumer:
 
     def process_message(self, ch, method, properties, body):
         try:
+            session = ChatSession.objects.get(
+                user_id=user_id,
+                is_active=True
+            )
+        except ChatSession.DoesNotExist:
+            session = ChatSession.objects.create(user_id=user_id)
+
+        try:
             message_data = json.loads(body)
             message_id = message_data['message_id']
             user_id = message_data['user_id']
             content = message_data['content']
+            session, created = ChatSession.objects.get_or_create(
+                user_id=user_id,
+                is_active=True
+            )
 
             print(f" [x] Received message {message_id} from user {user_id}")
+
+            if session.messages.count() >= 20:
+                session.is_active = False
+                session.save()
+                session = ChatSession.objects.create(user_id=user_id)
+
+            ChatMessage.objects.create(
+                session=session,
+                content=content,
+                role='user'
+            )
+
+            history = [
+                {"role": msg.role, "content": msg.content}
+                for msg in session.messages.all().order_by('created_at')
+            ]
+
+            response_content = DeepSeekService.get_response(history)
+
+            ChatMessage.objects.create(
+                session=session,
+                content=response_content,
+                role='assistant'
+            )
 
 
             previous_messages = ChatMessage.objects.filter(

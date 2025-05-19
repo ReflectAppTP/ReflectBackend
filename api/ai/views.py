@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.conf import settings
-from api.emotions.models import UserState  # Используем существующую модель
+from api.emotions.models import UserState
 from .models import DeepSeekAnalysis, ChatMessage, ChatSession
 import pika
 import uuid
@@ -12,7 +12,7 @@ import json
 
 @api_view(['POST'])
 def reset_chat_session(request):
-    # Закрываем текущую сессию
+
     ChatSession.objects.filter(
         user=request.user,
         is_active=True

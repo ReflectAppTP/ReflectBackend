@@ -44,80 +44,66 @@ class ChatConsumer:
 
     def process_message(self, ch, method, properties, body):
         try:
-            session = ChatSession.objects.get(
-                user_id=user_id,
-                is_active=True
-            )
-        except ChatSession.DoesNotExist:
-            session = ChatSession.objects.create(user_id=user_id)
 
-        try:
             message_data = json.loads(body)
-            message_id = message_data['message_id']
-            user_id = message_data['user_id']
-            content = message_data['content']
+            user_id = message_data.get('user_id')
+            message_id = message_data.get('message_id')
+            content = message_data.get('content')
+
+
+            if not all([user_id, message_id, content]):
+                print(" [x] Invalid message format")
+                return
+
+            print(f" [x] Processing message {message_id} from user {user_id}")
+
+
             session, created = ChatSession.objects.get_or_create(
                 user_id=user_id,
-                is_active=True
+                is_active=True,
+                defaults={'user_id': user_id}
             )
 
-            print(f" [x] Received message {message_id} from user {user_id}")
 
             if session.messages.count() >= 20:
                 session.is_active = False
                 session.save()
                 session = ChatSession.objects.create(user_id=user_id)
 
+
             ChatMessage.objects.create(
                 session=session,
+                message_id=message_id,
                 content=content,
-                role='user'
+                role='user',
+                status='processing'
             )
 
+
+            history_messages = session.messages.all().order_by('-created_at')[:10]
             history = [
                 {"role": msg.role, "content": msg.content}
-                for msg in session.messages.all().order_by('created_at')
+                for msg in reversed(history_messages)
             ]
+
 
             response_content = DeepSeekService.get_response(history)
 
-            ChatMessage.objects.create(
-                session=session,
-                content=response_content,
+
+            ChatMessage.objects.filter(message_id=message_id).update(
+                response=response_content,
+                status='processed',
                 role='assistant'
             )
 
+            print(f" [x] Completed processing message {message_id}")
 
-            previous_messages = ChatMessage.objects.filter(
-                user_id=user_id
-            ).order_by('-created_at')[:5]
-
-
-            messages = [
-                {
-                    "role": "user" if msg.status == 'pending' else "assistant",
-                    "content": msg.content if msg.status == 'pending' else msg.response
-                }
-                for msg in reversed(previous_messages)
-            ]
-            messages.append({"role": "user", "content": content})
-
-
-            deepseek = DeepSeekService()
-            response = deepseek.get_response(messages)
-
-
-            ChatMessage.objects.filter(message_id=message_id).update(
-                response=response,
-                status='processed'
-            )
-
-            print(f" [x] Processed message {message_id}")
         except Exception as e:
             print(f" [x] Error processing message: {str(e)}")
-            ChatMessage.objects.filter(message_id=message_id).update(
-                status='failed'
-            )
+            if 'message_id' in locals():
+                ChatMessage.objects.filter(message_id=message_id).update(
+                    status='failed'
+                )
 
 
 if __name__ == "__main__":

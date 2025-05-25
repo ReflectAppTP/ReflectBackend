@@ -22,7 +22,6 @@ class DeepSeekAnalysis(models.Model):
 
 class ChatSession(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    session_id = models.UUIDField(default=uuid.uuid4, editable=False)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     class Meta:

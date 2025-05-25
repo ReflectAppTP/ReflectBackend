@@ -6,13 +6,11 @@ from django.conf import settings
 from api.emotions.models import UserState
 from .models import DeepSeekAnalysis, ChatMessage, ChatSession
 import pika
-import uuid
 import json
 
 
 @api_view(['POST'])
 def reset_chat_session(request):
-
     ChatSession.objects.filter(
         user=request.user,
         is_active=True
@@ -21,13 +19,11 @@ def reset_chat_session(request):
     new_session = ChatSession.objects.create(user=request.user)
 
     return Response({
-        "session_id": new_session.id,
+        "session_id": new_session.id,  # Используем стандартный id
         "message": "Chat session reset"
     })
 
 class DeepSeekRequestView(APIView):
-
-
     def post(self, request):
         states = UserState.objects.filter(
             user=request.user
@@ -54,19 +50,18 @@ class DeepSeekRequestView(APIView):
 
         analysis = DeepSeekAnalysis.objects.create(
             user=request.user,
-            correlation_id=str(uuid.uuid4()),
             input_data=analysis_data,
             status='processing'
         )
 
-        self._send_to_rabbitmq(analysis_data, analysis.correlation_id)
+        self._send_to_rabbitmq(analysis_data, analysis.id)  # Используем стандартный id
 
         return Response({
-            "correlation_id": analysis.correlation_id,
+            "analysis_id": analysis.id,  # Возвращаем стандартный id
             "status": "analysis_started"
         }, status=status.HTTP_202_ACCEPTED)
 
-    def _send_to_rabbitmq(self, data, correlation_id):
+    def _send_to_rabbitmq(self, data, analysis_id):
         connection = pika.BlockingConnection(
             pika.ConnectionParameters(
                 host=settings.RABBITMQ['HOST'],
@@ -82,7 +77,7 @@ class DeepSeekRequestView(APIView):
             exchange=settings.RABBITMQ['EXCHANGE'],
             routing_key=settings.RABBITMQ['REQUEST_QUEUE'],
             properties=pika.BasicProperties(
-                correlation_id=correlation_id,
+                correlation_id=str(analysis_id),  # Преобразуем в строку для RabbitMQ
                 reply_to=settings.RABBITMQ['RESPONSE_QUEUE']
             ),
             body=json.dumps(data)
@@ -90,13 +85,11 @@ class DeepSeekRequestView(APIView):
 
         connection.close()
 
-
 class DeepSeekResultView(APIView):
-
-    def get(self, request, correlation_id):
+    def get(self, request, analysis_id):  # Принимаем стандартный id
         try:
             analysis = DeepSeekAnalysis.objects.get(
-                correlation_id=correlation_id,
+                id=analysis_id,  # Ищем по стандартному id
                 user=request.user
             )
             return Response({
@@ -109,7 +102,6 @@ class DeepSeekResultView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-
 class ChatSendView(APIView):
     def post(self, request):
         user = request.user
@@ -118,7 +110,6 @@ class ChatSendView(APIView):
         if not content:
             return Response({"error": "Content is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Сохраняем сообщение в БД
         message = ChatMessage.objects.create(
             user=user,
             content=content,
@@ -140,7 +131,7 @@ class ChatSendView(APIView):
             exchange='chat_exchange',
             routing_key='chat_requests',
             body=json.dumps({
-                'message_id': str(message.id),
+                'message_id': message.id,  # Используем стандартный id
                 'user_id': user.id,
                 'content': content
             })
@@ -149,15 +140,15 @@ class ChatSendView(APIView):
         connection.close()
 
         return Response({
-            "message_id": message.id,
+            "message_id": message.id,  # Возвращаем стандартный id
             "status": "queued"
         }, status=status.HTTP_202_ACCEPTED)
 
-
 class ChatStatusView(APIView):
-    def get(self, request):
+    def get(self, request, message_id):  # Принимаем стандартный id
         try:
             message = ChatMessage.objects.get(
+                id=message_id,  # Ищем по стандартному id
                 user=request.user
             )
             return Response({
@@ -166,4 +157,3 @@ class ChatStatusView(APIView):
             })
         except ChatMessage.DoesNotExist:
             return Response({"error": "Message not found"}, status=404)
-

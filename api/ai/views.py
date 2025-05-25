@@ -1,11 +1,13 @@
 from django.utils import timezone
-
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.conf import settings
 from api.emotions.models import UserState
+from .deepseek_service import DeepSeekService
 from .models import DeepSeekAnalysis, ChatMessage, ChatSession
 import pika
 import json
@@ -104,59 +106,65 @@ class DeepSeekResultView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
+
+
+
+executor = ThreadPoolExecutor(max_workers=4)  # Пул потоков для обработки
+
+
 class ChatSendView(APIView):
     def post(self, request):
         user = request.user
         content = request.data.get('content')
 
         if not content:
-            return Response({"error": "Content is required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Content is required"}, status=400)
 
-        # Получаем или создаем активную сессию
-        session, created = ChatSession.objects.get_or_create(
+        # Создаем сессию и сообщение
+        session = ChatSession.objects.filter(
             user=user,
-            is_active=True,
-            defaults={'created_at': timezone.now()}
-        )
+            is_active=True
+        ).first() or ChatSession.objects.create(user=user)
 
-        # Создаем сообщение с привязкой к сессии
         message = ChatMessage.objects.create(
-            session=session,  # Важно: указываем сессию
+            session=session,
             user=user,
             content=content,
-            status='pending'
+            role='user',
+            status='processing'  # Новый статус для отслеживания
         )
 
-        # Отправка в RabbitMQ
-        connection = pika.BlockingConnection(
-            pika.ConnectionParameters(
-                host=settings.RABBITMQ['HOST'],
-                credentials=pika.PlainCredentials(
-                    settings.RABBITMQ['USER'],
-                    settings.RABBITMQ['PASSWORD']
-                )
-            )
-        )
-        channel = connection.channel()
+        # Получаем историю сообщений
+        history = [
+                      {"role": msg.role, "content": msg.content}
+                      for msg in session.messages.all().order_by('-created_at')[:5]
+                  ][::-1]
 
-        channel.basic_publish(
-            exchange='chat_exchange',
-            routing_key='chat_requests',
-            body=json.dumps({
-                'message_id': message.id,  # Используем стандартный ID
-                'session_id': session.id,  # Добавляем ID сессии
-                'user_id': user.id,
-                'content': content
+        # Синхронный вызов AI (с таймаутом)
+        try:
+            # Запускаем в отдельном потоке с таймаутом
+            future = executor.submit(DeepSeekService.get_response, history)
+            response_content = future.result(timeout=15)  # Таймаут 15 секунд
+
+            # Сохраняем ответ
+            message.response = response_content
+            message.role = 'assistant'
+            message.status = 'processed'
+            message.save()
+
+            return Response({
+                "message_id": message.id,
+                "response": response_content,
+                "status": "processed"
             })
-        )
 
-        connection.close()
-
-        return Response({
-            "message_id": message.id,
-            "session_id": session.id,
-            "status": "queued"
-        }, status=status.HTTP_202_ACCEPTED)
+        except Exception as e:
+            message.status = 'failed'
+            message.save()
+            return Response(
+                {"error": str(e), "message_id": message.id},
+                status=500
+            )
 
 class ChatStatusView(APIView):
     def get(self, request, message_id):  # Принимаем стандартный id

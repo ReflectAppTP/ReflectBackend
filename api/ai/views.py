@@ -1,5 +1,5 @@
 from django.utils import timezone
-
+from rest_framework.exceptions import NotFound
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -157,6 +157,29 @@ class ChatSendView(APIView):
             "session_id": session.id,
             "status": "queued"
         }, status=status.HTTP_202_ACCEPTED)
+
+
+class MessageStatusView(APIView):
+    """
+    GET /api/chat/messages/<int:message_id>/
+    Возвращает статус и ответ сообщения
+    """
+
+    def get(self, request, message_id):
+        try:
+            message = ChatMessage.objects.get(
+                id=message_id,
+                user=request.user  # Проверяем, что сообщение принадлежит пользователю
+            )
+
+            return Response({
+                "status": message.status,
+                "response": message.response if message.status == 'processed' else None,
+                "created_at": message.created_at
+            })
+
+        except ChatMessage.DoesNotExist:
+            raise NotFound(detail="Message not found")
 
 class ChatStatusView(APIView):
     def get(self, request, message_id):  # Принимаем стандартный id

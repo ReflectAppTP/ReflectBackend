@@ -30,6 +30,11 @@ class ChatSession(models.Model):
 
 
 class ChatMessage(models.Model):
+    ROLE_CHOICES = [
+        ('user', 'User'),
+        ('assistant', 'Assistant')
+    ]
+
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('processed', 'Processed'),
@@ -39,8 +44,7 @@ class ChatMessage(models.Model):
     session = models.ForeignKey(
         ChatSession,
         on_delete=models.CASCADE,
-        related_name='messages',
-        null=False  # Поле обязательно
+        related_name='messages'
     )
     user = models.ForeignKey(
         User,
@@ -48,6 +52,11 @@ class ChatMessage(models.Model):
     )
     content = models.TextField()
     response = models.TextField(null=True, blank=True)
+    role = models.CharField(  # Добавляем поле role
+        max_length=10,
+        choices=ROLE_CHOICES,
+        default='user'
+    )
     status = models.CharField(
         max_length=10,
         choices=STATUS_CHOICES,

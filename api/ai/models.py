@@ -24,8 +24,11 @@ class ChatSession(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
     class Meta:
         db_table = 'ai_chatsession'
+        ordering = ['-created_at']
+
 
 class ChatMessage(models.Model):
     STATUS_CHOICES = [
@@ -33,14 +36,27 @@ class ChatMessage(models.Model):
         ('processed', 'Processed'),
         ('failed', 'Failed')
     ]
+    ROLE_CHOICES = [
+        ('user', 'User'),
+        ('assistant', 'Assistant')
+    ]
 
-    session = models.ForeignKey(ChatSession, on_delete=models.CASCADE, null=False, related_name='messages')
+    session = models.ForeignKey(
+        ChatSession,
+        on_delete=models.CASCADE,
+        related_name='messages'
+    )
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    message_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     content = models.TextField()
-    role = models.CharField(max_length=10, choices=[('user', 'User'), ('assistant', 'Assistant')])
+    response = models.TextField(null=True, blank=True)
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES)
+    status = models.CharField(
+        max_length=10,
+        choices=STATUS_CHOICES,
+        default='pending'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+
     class Meta:
         ordering = ['created_at']
         indexes = [

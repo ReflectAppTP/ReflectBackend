@@ -49,53 +49,39 @@ class ChatConsumer:
         try:
             data = json.loads(body)
             user_id = data['user_id']
-            message_id = data['message_id']  # Получаем message_id из входящих данных
             content = data['content']
 
-            # 1. Получаем или создаем активную сессию
-            session = ChatSession.objects.filter(
+            session, created = ChatSession.objects.get_or_create(
                 user_id=user_id,
-                is_active=True
-            ).first()
+                is_active=True,
+                defaults={'created_at': timezone.now()}
+            )
 
-            if not session:
-                session = ChatSession.objects.create(
-                    user_id=user_id,
-                    session_id=uuid.uuid4()
-                )
-
-            # 2. Создаем сообщение с ВСЕМИ обязательными полями
             message = ChatMessage.objects.create(
                 session=session,
                 user_id=user_id,
-                message_id=message_id,  # Важно: передаем message_id
                 content=content,
                 role='user',
                 status='pending'
             )
 
-            # 3. Получаем историю сообщений (последние 10)
-            history_messages = session.messages.all().order_by('-created_at')[:10]
             history = [
-                {"role": msg.role, "content": msg.content}
-                for msg in reversed(history_messages)  # Правильный порядок
-            ]
+                          {"role": msg.role, "content": msg.content}
+                          for msg in session.messages.all().order_by('-created_at')[:10]
+                      ][::-1]
 
-            # 4. Получаем ответ от AI
-            response_content = DeepSeekService.get_response(history)
+            response = DeepSeekService.get_response(history)
 
-            # 5. Обновляем сообщение ответом
-            message.response = response_content
+            message.response = response
             message.status = 'processed'
+            message.role = 'assistant'
             message.save()
 
-            print(f"Processed message {message_id}")
-
         except Exception as e:
-            print(f"Error processing message {message_id}: {str(e)}")
-            ChatMessage.objects.filter(message_id=message_id).update(
-                status='failed'
-            )
+            if 'message' in locals():
+                message.status = 'failed'
+
+                message.save()
 
 
 if __name__ == "__main__":

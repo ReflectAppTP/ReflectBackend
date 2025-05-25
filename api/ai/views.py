@@ -121,7 +121,6 @@ class ChatSendView(APIView):
         # Сохраняем сообщение в БД
         message = ChatMessage.objects.create(
             user=user,
-            message_id=uuid.uuid4(),
             content=content,
             status='pending'
         )
@@ -141,7 +140,7 @@ class ChatSendView(APIView):
             exchange='chat_exchange',
             routing_key='chat_requests',
             body=json.dumps({
-                'message_id': str(message.message_id),
+                'message_id': str(message.id),
                 'user_id': user.id,
                 'content': content
             })
@@ -150,16 +149,15 @@ class ChatSendView(APIView):
         connection.close()
 
         return Response({
-            "message_id": message.message_id,
+            "message_id": message.id,
             "status": "queued"
         }, status=status.HTTP_202_ACCEPTED)
 
 
 class ChatStatusView(APIView):
-    def get(self, request, message_id):
+    def get(self, request):
         try:
             message = ChatMessage.objects.get(
-                message_id=message_id,
                 user=request.user
             )
             return Response({

@@ -1,5 +1,4 @@
 import os
-import uuid
 from datetime import timezone
 
 import django

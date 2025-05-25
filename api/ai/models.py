@@ -35,7 +35,7 @@ class ChatMessage(models.Model):
         ('failed', 'Failed')
     ]
 
-    session = models.ForeignKey(ChatSession, on_delete=models.CASCADE, related_name='messages')
+    session = models.ForeignKey(ChatSession, on_delete=models.CASCADE, null=False, related_name='messages')
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     message_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     content = models.TextField()

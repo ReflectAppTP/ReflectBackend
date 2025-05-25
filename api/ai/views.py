@@ -1,4 +1,4 @@
-from datetime import timezone
+from django.utils import timezone
 
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView

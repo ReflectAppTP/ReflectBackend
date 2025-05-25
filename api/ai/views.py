@@ -18,7 +18,6 @@ def reset_chat_session(request):
         is_active=True
     ).update(is_active=False)
 
-    # Создаем новую
     new_session = ChatSession.objects.create(user=request.user)
 
     return Response({
@@ -27,13 +26,9 @@ def reset_chat_session(request):
     })
 
 class DeepSeekRequestView(APIView):
-    """
-    POST /api/ai/analyze/
-    Анализирует эмоциональные состояния через DeepSeek
-    """
+
 
     def post(self, request):
-        # 1. Получаем последние 5 состояний пользователя
         states = UserState.objects.filter(
             user=request.user
         ).order_by('-created_at')[:5]
@@ -44,7 +39,6 @@ class DeepSeekRequestView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # 2. Формируем запрос
         analysis_data = {
             "user_id": request.user.id,
             "states": [
@@ -58,7 +52,6 @@ class DeepSeekRequestView(APIView):
             ]
         }
 
-        # 3. Сохраняем запрос в БД
         analysis = DeepSeekAnalysis.objects.create(
             user=request.user,
             correlation_id=str(uuid.uuid4()),
@@ -66,7 +59,6 @@ class DeepSeekRequestView(APIView):
             status='processing'
         )
 
-        # 4. Отправляем в RabbitMQ
         self._send_to_rabbitmq(analysis_data, analysis.correlation_id)
 
         return Response({
@@ -100,10 +92,6 @@ class DeepSeekRequestView(APIView):
 
 
 class DeepSeekResultView(APIView):
-    """
-    GET /api/ai/results/<correlation_id>/
-    Проверяет статус анализа
-    """
 
     def get(self, request, correlation_id):
         try:
@@ -138,7 +126,6 @@ class ChatSendView(APIView):
             status='pending'
         )
 
-        # Отправляем в RabbitMQ
         connection = pika.BlockingConnection(
             pika.ConnectionParameters(
                 host=settings.RABBITMQ['HOST'],

@@ -45,7 +45,7 @@ class ChatConsumer:
         print(" [*] Waiting for messages. To exit press CTRL+C")
         self.channel.start_consuming()
 
-    def process_message(ch, method, properties, body):
+    def process_message(channel, method, properties, body, *args):
         try:
             data = json.loads(body)
             user_id = data['user_id']
@@ -91,7 +91,7 @@ class ChatConsumer:
             message.save()
 
             # Подтверждаем обработку сообщения
-            ch.basic_ack(delivery_tag=method.delivery_tag)
+            channel.basic_ack(delivery_tag=method.delivery_tag)
 
         except Exception as e:
             if 'message' in locals():

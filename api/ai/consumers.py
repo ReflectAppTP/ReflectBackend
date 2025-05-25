@@ -1,4 +1,6 @@
 import os
+import uuid
+
 import django
 import sys
 
@@ -53,8 +55,12 @@ class ChatConsumer:
             session = ChatSession.objects.filter(
                 user_id=user_id,
                 is_active=True
-            ).first() or ChatSession.objects.create(user_id=user_id)
-
+            ).first()
+            if not session:
+                session = ChatSession.objects.create(
+                    user_id=user_id,
+                    session_id=uuid.uuid4()
+                )
             # Создаем сообщение пользователя
             ChatMessage.objects.create(
                 session=session,

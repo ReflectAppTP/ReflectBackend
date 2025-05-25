@@ -1,9 +1,19 @@
-import pika
+import os
+from datetime import timezone
+import django
+import sys
+
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'reflect_backend_app.settings')
+django.setup()
+from api.ai.models import ChatMessage, ChatSession
+
 import json
-from django.utils import timezone
+import pika
 from django.conf import settings
-from .models import ChatSession, ChatMessage
-from .deepseek_service import DeepSeekService
+
+from deepseek_service import DeepSeekService
 
 
 class ChatConsumer:

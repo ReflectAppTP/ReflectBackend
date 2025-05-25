@@ -21,7 +21,7 @@ def reset_chat_session(request):
     new_session = ChatSession.objects.create(user=request.user)
 
     return Response({
-        "session_id": new_session.session_id,
+        "session_id": new_session.id,
         "message": "Chat session reset"
     })
 

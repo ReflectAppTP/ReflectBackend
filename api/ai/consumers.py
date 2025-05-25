@@ -42,68 +42,50 @@ class ChatConsumer:
         print(" [*] Waiting for messages. To exit press CTRL+C")
         self.channel.start_consuming()
 
-    def process_message(self, ch, method, properties, body):
+    def process_message(ch, method, properties, body):
         try:
+            data = json.loads(body)
+            user_id = data['user_id']
+            message_id = data['message_id']
+            content = data['content']
 
-            message_data = json.loads(body)
-            user_id = message_data.get('user_id')
-            message_id = message_data.get('message_id')
-            content = message_data.get('content')
-
-
-            if not all([user_id, message_id, content]):
-                print(" [x] Invalid message format")
-                return
-
-            print(f" [x] Processing message {message_id} from user {user_id}")
-
-
-            session, created = ChatSession.objects.get_or_create(
+            # Получаем/создаем сессию
+            session = ChatSession.objects.filter(
                 user_id=user_id,
-                is_active=True,
-                defaults={'user_id': user_id}
-            )
+                is_active=True
+            ).first() or ChatSession.objects.create(user_id=user_id)
 
-
-            if session.messages.count() >= 20:
-                session.is_active = False
-                session.save()
-                session = ChatSession.objects.create(user_id=user_id)
-
-
+            # Создаем сообщение пользователя
             ChatMessage.objects.create(
                 session=session,
+                user_id=user_id,
                 message_id=message_id,
                 content=content,
                 role='user',
-                status='processing'
+                status='pending'
             )
 
-
-            history_messages = session.messages.all().order_by('-created_at')[:10]
+            # Получаем историю
             history = [
                 {"role": msg.role, "content": msg.content}
-                for msg in reversed(history_messages)
+                for msg in session.messages.filter(status='processed').order_by('created_at')[:10]
             ]
 
+            # Получаем ответ AI
+            response = DeepSeekService.get_response(history)
 
-            response_content = DeepSeekService.get_response(history)
-
-
+            # Обновляем статус
             ChatMessage.objects.filter(message_id=message_id).update(
-                response=response_content,
+                response=response,
                 status='processed',
                 role='assistant'
             )
 
-            print(f" [x] Completed processing message {message_id}")
-
         except Exception as e:
-            print(f" [x] Error processing message: {str(e)}")
-            if 'message_id' in locals():
-                ChatMessage.objects.filter(message_id=message_id).update(
-                    status='failed'
-                )
+            print(f"Error: {str(e)}")
+            ChatMessage.objects.filter(message_id=message_id).update(
+                status='failed'
+            )
 
 
 if __name__ == "__main__":

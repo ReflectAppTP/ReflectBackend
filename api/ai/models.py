@@ -27,13 +27,19 @@ class ChatSession(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 class ChatMessage(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('processed', 'Processed'),
+        ('failed', 'Failed')
+    ]
+
     session = models.ForeignKey(ChatSession, on_delete=models.CASCADE, related_name='messages')
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     message_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     content = models.TextField()
     role = models.CharField(max_length=10, choices=[('user', 'User'), ('assistant', 'Assistant')])
     created_at = models.DateTimeField(auto_now_add=True)
-
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     class Meta:
         ordering = ['created_at']
         indexes = [

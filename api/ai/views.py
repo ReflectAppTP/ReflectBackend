@@ -120,18 +120,19 @@ class ChatSendView(APIView):
         if not content:
             return Response({"error": "Content is required"}, status=400)
 
-        # Создаем сессию и сообщение
+        # Создаем сессию
         session = ChatSession.objects.filter(
             user=user,
             is_active=True
         ).first() or ChatSession.objects.create(user=user)
 
-        message = ChatMessage.objects.create(
+        # Создаем сообщение пользователя
+        user_message = ChatMessage.objects.create(
             session=session,
             user=user,
             content=content,
             role='user',
-            status='processing'  # Новый статус для отслеживания
+            status='processing'
         )
 
         # Получаем историю сообщений
@@ -140,31 +141,31 @@ class ChatSendView(APIView):
                       for msg in session.messages.all().order_by('-created_at')[:5]
                   ][::-1]
 
-        # Синхронный вызов AI (с таймаутом)
+        # Получаем ответ от нейросети
         try:
-            # Запускаем в отдельном потоке с таймаутом
-            future = executor.submit(DeepSeekService.get_response, history)
-            response_content = future.result(timeout=15)  # Таймаут 15 секунд
+            ai_response = DeepSeekService.get_response(history)
 
-            # Сохраняем ответ
-            message.response = response_content
-            message.role = 'assistant'
-            message.status = 'processed'
-            message.save()
+            # Создаем сообщение ассистента
+            ChatMessage.objects.create(
+                session=session,
+                user=user,
+                content=ai_response,
+                role='assistant',
+                status='processed'
+            )
 
             return Response({
-                "message_id": message.id,
-                "response": response_content,
+                "response": ai_response,
                 "status": "processed"
             })
 
         except Exception as e:
-            message.status = 'failed'
-            message.save()
-            return Response(
-                {"error": str(e), "message_id": message.id},
-                status=500
-            )
+            user_message.status = 'failed'
+            user_message.save()
+            return Response({
+                "response": "Sorry, I couldn't process your request at the moment.",
+                "status": "failed"
+            }, status=500)
 
 class ChatStatusView(APIView):
     def get(self, request, message_id):  # Принимаем стандартный id

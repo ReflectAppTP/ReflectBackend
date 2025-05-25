@@ -25,6 +25,8 @@ class ChatSession(models.Model):
     session_id = models.UUIDField(default=uuid.uuid4, editable=False)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        db_table = 'ai_chatsession'
 
 class ChatMessage(models.Model):
     STATUS_CHOICES = [

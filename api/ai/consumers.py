@@ -50,6 +50,8 @@ class ChatConsumer:
             data = json.loads(body)
             user_id = data['user_id']
             content = data['content']
+            message_id = data['message_id']
+            session_id = data['session_id']
 
             session, created = ChatSession.objects.get_or_create(
                 user_id=user_id,

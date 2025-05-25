@@ -110,12 +110,22 @@ class ChatSendView(APIView):
         if not content:
             return Response({"error": "Content is required"}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Получаем или создаем активную сессию
+        session, created = ChatSession.objects.get_or_create(
+            user=user,
+            is_active=True,
+            defaults={'created_at': timezone.now()}
+        )
+
+        # Создаем сообщение с привязкой к сессии
         message = ChatMessage.objects.create(
+            session=session,  # Важно: указываем сессию
             user=user,
             content=content,
             status='pending'
         )
 
+        # Отправка в RabbitMQ
         connection = pika.BlockingConnection(
             pika.ConnectionParameters(
                 host=settings.RABBITMQ['HOST'],
@@ -131,7 +141,8 @@ class ChatSendView(APIView):
             exchange='chat_exchange',
             routing_key='chat_requests',
             body=json.dumps({
-                'message_id': message.id,  # Используем стандартный id
+                'message_id': message.id,  # Используем стандартный ID
+                'session_id': session.id,  # Добавляем ID сессии
                 'user_id': user.id,
                 'content': content
             })
@@ -140,7 +151,8 @@ class ChatSendView(APIView):
         connection.close()
 
         return Response({
-            "message_id": message.id,  # Возвращаем стандартный id
+            "message_id": message.id,
+            "session_id": session.id,
             "status": "queued"
         }, status=status.HTTP_202_ACCEPTED)
 

@@ -36,20 +36,19 @@ class ChatMessage(models.Model):
         ('processed', 'Processed'),
         ('failed', 'Failed')
     ]
-    ROLE_CHOICES = [
-        ('user', 'User'),
-        ('assistant', 'Assistant')
-    ]
 
     session = models.ForeignKey(
         ChatSession,
         on_delete=models.CASCADE,
-        related_name='messages'
+        related_name='messages',
+        null=False  # Поле обязательно
     )
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE
+    )
     content = models.TextField()
     response = models.TextField(null=True, blank=True)
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES)
     status = models.CharField(
         max_length=10,
         choices=STATUS_CHOICES,
@@ -59,6 +58,3 @@ class ChatMessage(models.Model):
 
     class Meta:
         ordering = ['created_at']
-        indexes = [
-            models.Index(fields=['session', 'created_at']),
-        ]

@@ -1,10 +1,10 @@
-from django.urls import path
-from . import views
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import FriendshipViewSet
+
+router = DefaultRouter()
+router.register(r'friendships', FriendshipViewSet, basename='friendship')
 
 urlpatterns = [
-    path('', views.friends_list, name='friends-list'),
-    path('<int:friend_id>/', views.friend_detail, name='friend-detail'),
-    path('accept/', views.accept_friend, name='accept-friend'),
-    path('<int:friend_id>/last_emotion/', views.friend_last_emotion, name='friend-last-emotion'),
-    path('<int:friend_id>/statistic/', views.friend_statistic, name='friend-statistic'),
+    path('', include(router.urls)),
 ]

@@ -105,26 +105,27 @@ class FriendshipViewSet(viewsets.ModelViewSet):
 
 User = get_user_model()
 
-class UserByUsernameView(APIView):
+class UsersByUsernamePrefixView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, username):
-        user = get_object_or_404(User, username=username)
+    def get(self, request, username_prefix):
+        users = User.objects.filter(username__istartswith=username_prefix).exclude(id=request.user.id)
 
-        # Проверяем дружбу (если нужно)
-        is_friend = Friendship.objects.filter(
-            (Q(from_user=request.user) & Q(to_user=user)) |
-            (Q(from_user=user) & Q(to_user=request.user)),
-            status=Friendship.ACCEPTED
-        ).exists()
+        response_data = []
+        for user in users:
+            is_friend = Friendship.objects.filter(
+                (Q(from_user=request.user) & Q(to_user=user)) |
+                (Q(from_user=user) & Q(to_user=request.user)),
+                status=Friendship.ACCEPTED
+            ).exists()
 
-        response_data = {
-            "id": user.id,
-            "username": user.username,
-            "email": user.email,
-            "date_joined": user.created_at,
-            "is_friend": is_friend,
-            "is_premium": user.is_premium
-        }
+            response_data.append({
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "date_joined": user.created_at,
+                "is_friend": is_friend,
+                "is_premium": user.is_premium
+            })
 
         return Response(response_data)

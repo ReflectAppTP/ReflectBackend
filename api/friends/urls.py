@@ -7,5 +7,5 @@ router.register(r'friendships', FriendshipViewSet, basename='friendship')
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('by-username/<str:username>/', UsersByUsernamePrefixView.as_view(), name='user-by-username'),
+    path('by-username/<str:username_prefix>/', UsersByUsernamePrefixView.as_view(), name='user-by-username'),
 ]

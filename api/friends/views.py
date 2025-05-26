@@ -89,7 +89,7 @@ class FriendshipViewSet(viewsets.ModelViewSet):
         )
 
     @action(detail=False, methods=['get'])
-    def list(self, request):
+    def listf(self, request):
         friendships = Friendship.objects.filter(
             Q(from_user=request.user) | Q(to_user=request.user),
             status=Friendship.ACCEPTED

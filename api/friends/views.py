@@ -2,13 +2,17 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
 from .models import Friendship
+from django.contrib.auth import get_user_model
 from .serializers import (
     FriendshipSerializer,
     CreateFriendshipSerializer,
     UpdateFriendshipSerializer, UserSerializer
 )
 from django.db.models import Q
+from django.shortcuts import get_object_or_404
+
 
 
 class FriendshipViewSet(viewsets.ModelViewSet):
@@ -98,3 +102,29 @@ class FriendshipViewSet(viewsets.ModelViewSet):
 
         serializer = UserSerializer(friends, many=True)
         return Response(serializer.data)
+
+User = get_user_model()
+
+class UserByUsernameView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, username):
+        user = get_object_or_404(User, username=username)
+
+        # Проверяем дружбу (если нужно)
+        is_friend = Friendship.objects.filter(
+            (Q(from_user=request.user) & Q(to_user=user)) |
+            (Q(from_user=user) & Q(to_user=request.user)),
+            status=Friendship.ACCEPTED
+        ).exists()
+
+        response_data = {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "date_joined": user.created_at,
+            "is_friend": is_friend,
+            "is_premium": user.is_premium
+        }
+
+        return Response(response_data)

@@ -11,13 +11,17 @@ class TokenAuthMiddleware(BaseMiddleware):
         token = parse_qs(query_string).get("token")
 
         if token:
+            print(f"WebSocket token received: {token[0]}")
             try:
                 validated_token = JWTAuthentication().get_validated_token(token[0])
                 user = JWTAuthentication().get_user(validated_token)
+                print(f"Authenticated WebSocket user: {user.username}")
                 scope["user"] = user
-            except Exception:
+            except Exception as e:
+                print(f"JWT auth failed: {str(e)}")
                 scope["user"] = AnonymousUser()
         else:
+            print("No token in query string")
             scope["user"] = AnonymousUser()
 
         close_old_connections()

@@ -41,18 +41,29 @@ class AdminReportViewSet(viewsets.ViewSet):
             report.state.delete()
         return Response({"resolved": True, "accepted": accepted})
 
-    @action(detail=True, methods=["post"])
+    @action(detail=True, methods=['post'])
     def resolve_user(self, request, pk=None):
-        report = UserReport.objects.get(pk=pk)
-        accepted = request.data.get("accept", False)
+        try:
+            report = UserReport.objects.get(pk=pk)
+        except UserReport.DoesNotExist:
+            return Response({"error": "Report not found"}, status=404)
+
+        accept = request.data.get("accept", False)
+
         report.is_resolved = True
-        report.is_accepted = accepted
+        report.is_accepted = accept
         report.save()
-        if accepted:
+
+        if accept:
             reported = report.reported_user
-            reported.can_use_friends = False
+            reported.is_blocked = True
             reported.save()
-        return Response({"resolved": True, "accepted": accepted})
+
+        return Response({
+            "resolved": True,
+            "accepted": accept,
+            "user_blocked": accept
+        })
 
     @action(detail=True, methods=["delete"])
     def delete_user(self, request, pk=None):

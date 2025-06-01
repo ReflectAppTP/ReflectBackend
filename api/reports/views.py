@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -61,3 +61,21 @@ class AdminReportViewSet(viewsets.ViewSet):
             return Response({"deleted": True})
         except User.DoesNotExist:
             return Response({"error": "Not found"}, status=404)
+
+class UserReportViewSet(viewsets.ModelViewSet):
+    queryset = UserReport.objects.all()
+    serializer_class = UserReportSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(reporter=self.request.user)
+
+class StateReportViewSet(viewsets.ModelViewSet):
+    queryset = StateReport.objects.all()
+    serializer_class = StateReportSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+
+
+    def perform_create(self, serializer):
+        serializer.save(reporter=self.request.user)

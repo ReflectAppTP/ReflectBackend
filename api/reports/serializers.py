@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import StateReport, UserReport
 from django.contrib.auth import get_user_model
-from .models import UserState  # путь укажи свой
+from .models import UserState
 
 User = get_user_model()
 
@@ -16,3 +16,8 @@ class UserReportSerializer(serializers.ModelSerializer):
         model = UserReport
         fields = '__all__'
         read_only_fields = ['reporter', 'created_at', 'is_resolved', 'is_accepted']
+
+class BlockUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['is_blocked']

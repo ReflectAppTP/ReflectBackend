@@ -26,9 +26,18 @@ class User(AbstractBaseUser):
     created_at = models.DateTimeField(auto_now_add=True)
     is_admin = models.BooleanField(default=False)
     is_premium = models.BooleanField(default=False)
-
+    VISIBILITY_CHOICES = [
+        ('all', 'Виден всем'),
+        ('friends', 'Виден друзьям'),
+        ('self', 'Только себе'),
+    ]
     objects = UserManager()
-
+    visibility = models.CharField(
+        max_length=10,
+        choices=VISIBILITY_CHOICES,
+        default='all'
+    )
+    is_blocked = models.BooleanField(default=False)
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
 

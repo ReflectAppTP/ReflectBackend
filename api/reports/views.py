@@ -1,10 +1,11 @@
 from rest_framework import viewsets, status, permissions
+from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from .models import StateReport, UserReport
-from .serializers import StateReportSerializer, UserReportSerializer
+from .serializers import StateReportSerializer, UserReportSerializer, BlockUserSerializer
 
 User = get_user_model()
 
@@ -79,3 +80,22 @@ class StateReportViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(reporter=self.request.user)
+
+class BlockUserView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def patch(self, request, user_id):
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=404)
+
+        serializer = BlockUserSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                "success": True,
+                "user_id": user.id,
+                "is_blocked": user.is_blocked
+            })
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

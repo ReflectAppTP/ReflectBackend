@@ -6,7 +6,7 @@ import sys
 
 from datetime import timezone
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
-from django.contrib.auth.models import AnonymousUser
+from channels.db import database_sync_to_async
 from api.ai.models import ChatMessage, ChatSession
 from django.conf import settings
 
@@ -131,8 +131,10 @@ class ChatConsumer:
 
 class NotificationConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
+        from django.contrib.auth.models import AnonymousUser
+
         user = self.scope["user"]
-        if user is None or user == AnonymousUser():
+        if user is None or isinstance(user, AnonymousUser):
             await self.close()
         else:
             self.group_name = f"user_{user.id}"
@@ -141,16 +143,12 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
 
     async def disconnect(self, close_code):
         user = self.scope["user"]
-        if user and user != AnonymousUser():
+        if user and hasattr(self, "group_name"):
             await self.channel_layer.group_discard(self.group_name, self.channel_name)
-
-    async def receive_json(self, content):
-
-        pass
 
     async def send_notification(self, event):
         await self.send_json({
-            "type": event["type"],
+            "type": "notification",
             "message": event["message"]
         })
 

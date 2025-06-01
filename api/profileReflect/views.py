@@ -12,6 +12,7 @@ from api.friends.models import Friendship
 from datetime import datetime, timedelta
 
 from ..emotions.models import UserState
+from ..emotions.serializers import TagSerializer, EmotionalTagSerializer
 
 User = get_user_model()
 
@@ -78,11 +79,18 @@ class UserDetailWithStateView(APIView):
             user=user,
             created_at__date=today
         ).order_by('-created_at').first()
+
+        if not state:
+            return None
+
         return {
+            "id": state.id,
             "description": state.description,
             "value": state.value,
-            "created_at": state.created_at.strftime('%Y-%m-%d %H:%M')
-        } if state else None
+            "created_at": state.created_at.strftime('%Y-%m-%d %H:%M'),
+            "tags": TagSerializer(state.tags.all(), many=True).data,
+            "emotional_tags": EmotionalTagSerializer(state.emotional_tags.all(), many=True).data
+        }
 
     def get(self, request, user_id):
         target_user = get_object_or_404(User, id=user_id)

@@ -10,6 +10,8 @@ from .serializers import (
     CreateFriendshipSerializer,
     UpdateFriendshipSerializer, UserSerializer
 )
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 
@@ -46,7 +48,14 @@ class FriendshipViewSet(viewsets.ModelViewSet):
             to_user_id=serializer.validated_data['to_user_id'],
             defaults={'status': Friendship.PENDING}
         )
-
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"user_{serializer.validated_data['to_user_id']}",
+            {
+                "type": "send_notification",
+                "message": f"Новый запрос в друзья от {request.user.username}"
+            }
+        )
         if not created:
             return Response(
                 {"error": "Friend request already exists"},

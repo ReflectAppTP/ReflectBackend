@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    "channels",
     'rest_framework',
     'rest_framework_simplejwt',
     'api.authReflect',
@@ -92,6 +93,8 @@ TEMPLATES = [
     },
 ]
 
+ASGI_APPLICATION = "reflect_backend_app.asgi.application"
+
 WSGI_APPLICATION = 'reflect_backend_app.wsgi.application'
 
 OPTIONS = {
@@ -129,6 +132,15 @@ DATABASES = {
         'HOST': '185.185.71.233',
         'PORT': '5438'
     }
+}
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("redis", 6379)],
+        },
+    },
 }
 
 

@@ -2,7 +2,8 @@ import os
 from datetime import timezone
 import django
 import sys
-
+from channels.generic.websocket import AsyncJsonWebsocketConsumer
+from django.contrib.auth.models import AnonymousUser
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'reflect_backend_app.settings')
@@ -127,6 +128,30 @@ class ChatConsumer:
         if self.connection and self.connection.is_open:
             self.connection.close()
 
+class NotificationConsumer(AsyncJsonWebsocketConsumer):
+    async def connect(self):
+        user = self.scope["user"]
+        if user is None or user == AnonymousUser():
+            await self.close()
+        else:
+            self.group_name = f"user_{user.id}"
+            await self.channel_layer.group_add(self.group_name, self.channel_name)
+            await self.accept()
+
+    async def disconnect(self, close_code):
+        user = self.scope["user"]
+        if user and user != AnonymousUser():
+            await self.channel_layer.group_discard(self.group_name, self.channel_name)
+
+    async def receive_json(self, content):
+
+        pass
+
+    async def send_notification(self, event):
+        await self.send_json({
+            "type": event["type"],
+            "message": event["message"]
+        })
 
 if __name__ == '__main__':
     consumer = None

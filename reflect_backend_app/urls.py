@@ -12,4 +12,5 @@ urlpatterns = [
     path('api/profileReflect/', include('api.profileReflect.urls')),
     path('api/ai/', include('api.ai.urls')),
     path('api/friends/', include('api.friends.urls')),
+    path('api/reports/', include('api.reports.urls'))
 ]

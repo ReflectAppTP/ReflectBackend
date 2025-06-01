@@ -8,7 +8,7 @@ from django.core.exceptions import ValidationError
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'created_at', 'is_admin', 'is_premium']
+        fields = ['id', 'username', 'email', 'created_at', 'is_admin', 'is_premium', 'visibility']
         read_only_fields = ['id', 'created_at']
 
 class RegisterSerializer(serializers.ModelSerializer):

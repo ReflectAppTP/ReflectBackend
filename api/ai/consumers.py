@@ -1,20 +1,18 @@
 import os
-import json
-import pika
 import django
 import sys
-
-from datetime import timezone
-from channels.generic.websocket import AsyncJsonWebsocketConsumer
-from channels.db import database_sync_to_async
-from api.ai.models import ChatMessage, ChatSession
-from django.conf import settings
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'reflect_backend_app.settings')
 django.setup()
 
-
+import json
+import pika
+from datetime import timezone
+from channels.generic.websocket import AsyncJsonWebsocketConsumer
+from channels.db import database_sync_to_async
+from api.ai.models import ChatMessage, ChatSession
+from django.conf import settings
 from api.ai.deepseek_service import DeepSeekService
 
 

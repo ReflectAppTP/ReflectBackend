@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from .models import StateReport, UserReport
-from .serializers import StateReportSerializer, UserReportSerializer, BlockUserSerializer
+from .serializers import StateReportSerializer, UserReportSerializer, BlockUserSerializer, AdminUsernameSerializer, AdminBlockStatusSerializer, AdminPrivilegesSerializer
 
 User = get_user_model()
 
@@ -109,4 +109,40 @@ class BlockUserView(APIView):
                 "user_id": user.id,
                 "is_blocked": user.is_blocked
             })
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class AdminUserUpdateView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def patch_username(self, request, user_id):
+        user = User.objects.filter(id=user_id).first()
+        if not user:
+            return Response({"error": "User not found"}, status=404)
+
+        serializer = AdminUsernameSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"success": True, "username": serializer.data['username']})
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def patch_block(self, request, user_id):
+        user = User.objects.filter(id=user_id).first()
+        if not user:
+            return Response({"error": "User not found"}, status=404)
+
+        serializer = AdminBlockStatusSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"success": True, "is_blocked": serializer.data['is_blocked']})
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def patch_admin(self, request, user_id):
+        user = User.objects.filter(id=user_id).first()
+        if not user:
+            return Response({"error": "User not found"}, status=404)
+
+        serializer = AdminPrivilegesSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"success": True, "is_admin": serializer.data['is_admin']})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

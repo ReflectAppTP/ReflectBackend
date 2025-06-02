@@ -1,5 +1,5 @@
 from django.urls import path, include
-from .views import AdminReportViewSet
+from .views import AdminReportViewSet, AdminUserUpdateView
 from rest_framework.routers import DefaultRouter
 from .views import UserReportViewSet, StateReportViewSet, BlockUserView
 
@@ -19,5 +19,8 @@ urlpatterns = [
     path("admin/user/<int:pk>/resolve/", AdminReportViewSet.as_view({"post": "resolve_user"})),
     path("admin/user/<int:pk>/delete/", AdminReportViewSet.as_view({"delete": "delete_user"})),
     path("admin/user/<int:user_id>/block/", BlockUserView.as_view()),
+    path('admin/user/<int:user_id>/edit/username/', AdminUserUpdateView.as_view({'patch': 'patch_username'})),
+    path('admin/user/<int:user_id>/edit/is_blocked/', AdminUserUpdateView.as_view({'patch': 'patch_block'})),
+    path('admin/user/<int:user_id>/edit/is_admin/', AdminUserUpdateView.as_view({'patch': 'patch_admin'})),
     path('', include(router.urls)),
 ]

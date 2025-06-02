@@ -30,8 +30,8 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Пароль не должен содержать пробелов по краям")
         if ' ' in value:
             raise serializers.ValidationError("Пароль не должен содержать пробелов внутри")
-        if len(value) < 8:
-            raise serializers.ValidationError("Пароль должен быть не менее 8 символов")
+        if len(value) < 6:
+            raise serializers.ValidationError("Пароль должен быть не менее 6 символов")
         return value
     class Meta:
         model = User

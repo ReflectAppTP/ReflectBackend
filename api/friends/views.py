@@ -53,7 +53,11 @@ class FriendshipViewSet(viewsets.ModelViewSet):
             f"user_{serializer.validated_data['to_user_id']}",
             {
                 "type": "send_notification",
-                "message": f"New friend request {request.user.username}"
+                "message": "New friend request",
+                "from_user": {
+                    "id": request.user.id,
+                    "username": request.user.username
+                }
             }
         )
         if not created:

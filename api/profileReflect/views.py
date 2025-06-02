@@ -133,3 +133,4 @@ class StreakView(APIView):
                 break
 
         return Response({"streak_days": streak})
+

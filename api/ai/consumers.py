@@ -147,7 +147,8 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
     async def send_notification(self, event):
         await self.send_json({
             "type": "notification",
-            "message": event["message"]
+            "message": event["message"],
+            "from_user": event.get("from_user")
         })
 
 if __name__ == '__main__':

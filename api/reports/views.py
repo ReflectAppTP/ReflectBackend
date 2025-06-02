@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, status, permissions
 from rest_framework.views import APIView
 from rest_framework.decorators import action
@@ -6,6 +7,7 @@ from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from .models import StateReport, UserReport
 from .serializers import StateReportSerializer, UserReportSerializer, BlockUserSerializer, AdminUsernameSerializer, AdminBlockStatusSerializer, AdminPrivilegesSerializer
+from ..emotions.models import UserState
 
 User = get_user_model()
 
@@ -19,8 +21,7 @@ class AdminReportViewSet(viewsets.ViewSet):
     @action(detail=False, methods=["get"])
     def users(self, request):
         users = User.objects.all()
-        return Response([{"id": u.id, "username": u.username, "is_admin": u.is_admin, "email": u.email} for u in users])
-
+        return Response([{"id": u.id, "username": u.username, "is_admin": u.is_admin, "email": u.email, "is_premium": u.is_premium, "is_blocked": u.is_blocked} for u in users])
     @action(detail=False, methods=["get"])
     def reports(self, request):
         state_reports = StateReport.objects.all()
@@ -146,3 +147,16 @@ class AdminUserUpdateView(APIView):
             serializer.save()
             return Response({"success": True, "is_admin": serializer.data['is_admin']})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class AdminUserStateDetailView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request, state_id):
+        state = get_object_or_404(UserState, id=state_id)
+        user = state.user
+
+        return Response({
+            "username": user.username,
+            "email": user.email,
+            "description": state.description
+        })

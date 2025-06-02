@@ -1,5 +1,5 @@
 from django.urls import path, include
-from .views import AdminReportViewSet, AdminUserUpdateView
+from .views import AdminReportViewSet, AdminUserUpdateView, AdminUserStateDetailView
 from rest_framework.routers import DefaultRouter
 from .views import UserReportViewSet, StateReportViewSet, BlockUserView
 
@@ -22,5 +22,6 @@ urlpatterns = [
     path('admin/user/<int:user_id>/edit/username/', AdminUserUpdateView.as_view()),
     path('admin/user/<int:user_id>/edit/is_blocked/', AdminUserUpdateView.as_view()),
     path('admin/user/<int:user_id>/edit/is_admin/', AdminUserUpdateView.as_view()),
+    path('admin/state/<int:state_id>/details/', AdminUserStateDetailView.as_view()),
     path("", include(router.urls)),
 ]

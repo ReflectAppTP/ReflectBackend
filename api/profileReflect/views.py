@@ -32,14 +32,10 @@ class UpdateVisibilityView(APIView):
     permission_classes = [IsAuthenticated]
 
     def patch(self, request):
-        serializer = VisibilityUpdateSerializer(
-            request.user,
-            data=request.data,
-            partial=True
-        )
+        serializer = VisibilityUpdateSerializer(request.user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response({"success": True, "visibility": serializer.data["visibility"]})
+            return Response({"success": True, "visibility": serializer.data['visibility']})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class UserDetailWithStateView(APIView):

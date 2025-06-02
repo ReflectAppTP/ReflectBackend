@@ -99,7 +99,9 @@ class UserDetailWithStateView(APIView):
         response = {
             "id": target_user.id,
             "username": target_user.username,
+            "is_premium": target_user.is_premium,
             "friendship_status": friendship_status,
+            "visibility": target_user.visibility
         }
 
         # Разрешена ли видимость

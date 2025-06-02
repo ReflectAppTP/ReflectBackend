@@ -87,7 +87,7 @@ class UserDetailWithStateView(APIView):
             "id": state.id,
             "description": state.description,
             "value": state.value,
-            "created_at": state.created_at.strftime('%Y-%m-%d %H:%M'),
+            "created_at": state.created_at,
             "tags": TagSerializer(state.tags.all(), many=True).data,
             "emotional_tags": EmotionalTagSerializer(state.emotional_tags.all(), many=True).data
         }

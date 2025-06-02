@@ -19,7 +19,7 @@ class AdminReportViewSet(viewsets.ViewSet):
     @action(detail=False, methods=["get"])
     def users(self, request):
         users = User.objects.all()
-        return Response([{"id": u.id, "username": u.username, "is_admin": u.is_admin} for u in users])
+        return Response([{"id": u.id, "username": u.username, "is_admin": u.is_admin, "email": u.email} for u in users])
 
     @action(detail=False, methods=["get"])
     def reports(self, request):

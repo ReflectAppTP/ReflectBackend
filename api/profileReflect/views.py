@@ -114,3 +114,20 @@ class UserDetailWithStateView(APIView):
         # visibility == 'self' → ничего не добавляем
 
         return Response(response)
+
+class StreakView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        today = datetime.now().date()
+        streak = 0
+
+        for i in range(0, 365):  # максимум 1 год назад
+            date = today - timedelta(days=i)
+            has_entry = UserState.objects.filter(user=request.user, created_at__date=date).exists()
+            if has_entry:
+                streak += 1
+            else:
+                break
+
+        return Response({"streak_days": streak})

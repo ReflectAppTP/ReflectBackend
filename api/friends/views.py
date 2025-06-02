@@ -142,3 +142,26 @@ class UsersByUsernamePrefixView(APIView):
             })
 
         return Response(response_data)
+
+class PendingFriendRequestsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        pending_requests = Friendship.objects.filter(
+            to_user=request.user,
+            status=Friendship.PENDING
+        )
+
+        response_data = [
+            {
+                "type": "notification",
+                "message": "New friend request",
+                "from_user": {
+                    "id": f.from_user.id,
+                    "username": f.from_user.username
+                }
+            }
+            for f in pending_requests
+        ]
+
+        return Response(response_data)

@@ -11,7 +11,7 @@ admin_reports = AdminReportViewSet.as_view({
 router = DefaultRouter()
 router.register(r'user', UserReportViewSet, basename='user-report')
 router.register(r'state', StateReportViewSet, basename='state-report')
-router.register(r'reports/admin/user', AdminUserViewSet, basename='admin-user')
+router.register(r'admin/user', AdminUserViewSet, basename='admin-user')
 
 urlpatterns = [
     path("admin/users/", AdminReportViewSet.as_view({"get": "users"})),

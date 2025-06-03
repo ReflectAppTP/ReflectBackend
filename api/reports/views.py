@@ -129,7 +129,7 @@ class AdminUserViewSet(viewsets.ViewSet):
         serializer = AdminUsernameSerializer(user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response({"success": True, "login": serializer.data["login"]})
+            return Response({"success": True, "username": serializer.data["username"]})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['patch'], url_path='edit/is_blocked')
@@ -162,7 +162,7 @@ class AdminUserStateDetailView(APIView):
         user = state.user
 
         return Response({
-            "login": user.login,
+            "username": user.username,
             "email": user.email,
             "description": state.description
         })

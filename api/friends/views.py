@@ -154,7 +154,7 @@ class UsersByUsernamePrefixView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, username_prefix):
-        users = User.objects.filter(username__istartswith=username_prefix).exclude(id=request.user.id)
+        users = User.objects.filter(username__istartswith=username_prefix, is_guest=False).exclude(id=request.user.id)
 
         response_data = []
         for user in users:

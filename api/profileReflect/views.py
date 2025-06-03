@@ -137,6 +137,9 @@ class UpdateUsernameView(APIView):
     permission_classes = [IsAuthenticated]
 
     def patch(self, request):
+
+        if getattr(request.user, 'is_guest', False):
+            return Response({'detail': 'Недоступно гостям'}, status=403)
         serializer = UsernameUpdateSerializer(request.user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -147,6 +150,8 @@ class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
 
     def patch(self, request):
+        if getattr(request.user, 'is_guest', False):
+            return Response({'detail': 'Недоступно гостям'}, status=403)
         serializer = PasswordChangeSerializer(data=request.data)
         if serializer.is_valid():
             if not check_password(serializer.validated_data['old_password'], request.user.password):
@@ -157,6 +162,7 @@ class ChangePasswordView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class DeleteAccountView(APIView):
+
     permission_classes = [IsAuthenticated]
 
     def delete(self, request):

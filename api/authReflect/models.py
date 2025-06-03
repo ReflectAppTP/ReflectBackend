@@ -38,6 +38,7 @@ class User(AbstractBaseUser):
         default='all'
     )
     is_blocked = models.BooleanField(default=False)
+    is_guest = models.BooleanField(default=False)
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
 
@@ -45,7 +46,6 @@ class User(AbstractBaseUser):
         if self.password and not self.password.startswith('pbkdf2_sha256$'):
             self.set_password(self.password)
         super().save(*args, **kwargs)
-
 
     def __str__(self):
         return self.username

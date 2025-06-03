@@ -1,5 +1,5 @@
 from django.urls import path, include
-from .views import AdminReportViewSet, AdminUserUpdateView, AdminUserStateDetailView
+from .views import AdminReportViewSet, AdminUserStateDetailView
 from rest_framework.routers import DefaultRouter
 from .views import UserReportViewSet, StateReportViewSet, BlockUserView, AdminUserViewSet
 

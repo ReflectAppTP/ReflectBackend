@@ -116,6 +116,38 @@ class FriendshipViewSet(viewsets.ModelViewSet):
         serializer = UserSerializer(friends, many=True)
         return Response(serializer.data)
 
+    @action(detail=False, methods=['post'], url_path='accept/(?P<user_id>[^/.]+)')
+    def accept_by_user(self, request, user_id):
+        friendship = Friendship.objects.filter(
+            from_user_id=user_id,
+            to_user=request.user,
+            status=Friendship.PENDING
+        ).first()
+
+        if not friendship:
+            return Response({"error": "Friend request not found"}, status=404)
+
+        friendship.status = Friendship.ACCEPTED
+        friendship.save()
+
+        return Response({"success": True, "accepted_from": user_id})
+
+    @action(detail=False, methods=['post'], url_path='reject/(?P<user_id>[^/.]+)')
+    def reject_by_user(self, request, user_id):
+        friendship = Friendship.objects.filter(
+            from_user_id=user_id,
+            to_user=request.user,
+            status=Friendship.PENDING
+        ).first()
+
+        if not friendship:
+            return Response({"error": "Friend request not found"}, status=404)
+
+        friendship.status = Friendship.REJECTED
+        friendship.save()
+
+        return Response({"success": True, "rejected_from": user_id})
+
 User = get_user_model()
 
 class UsersByUsernamePrefixView(APIView):

@@ -24,7 +24,7 @@ class BlockUserSerializer(serializers.ModelSerializer):
 class AdminUsernameSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['username']
+        fields = ['login']
 
 class AdminBlockStatusSerializer(serializers.ModelSerializer):
     class Meta:

@@ -123,7 +123,7 @@ class AdminUserUpdateView(APIView):
         serializer = AdminUsernameSerializer(user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response({"success": True, "username": serializer.data['username']})
+            return Response({"success": True, "login": serializer.data['login']})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def patch_block(self, request, user_id):

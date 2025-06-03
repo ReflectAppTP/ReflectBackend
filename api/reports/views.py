@@ -112,40 +112,46 @@ class BlockUserView(APIView):
             })
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class AdminUserUpdateView(APIView):
+class AdminUserViewSet(viewsets.ViewSet):
     permission_classes = [IsAdminUser]
 
-    def patch_username(self, request, user_id):
-        user = User.objects.filter(id=user_id).first()
+    def get_user(self, user_id):
+        try:
+            return User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return None
+
+    @action(detail=True, methods=['patch'], url_path='edit/username')
+    def edit_username(self, request, pk=None):
+        user = self.get_user(pk)
         if not user:
             return Response({"error": "User not found"}, status=404)
-
         serializer = AdminUsernameSerializer(user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response({"success": True, "login": serializer.data['login']})
+            return Response({"success": True, "login": serializer.data["login"]})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def patch_block(self, request, user_id):
-        user = User.objects.filter(id=user_id).first()
+    @action(detail=True, methods=['patch'], url_path='edit/is_blocked')
+    def edit_blocked(self, request, pk=None):
+        user = self.get_user(pk)
         if not user:
             return Response({"error": "User not found"}, status=404)
-
         serializer = AdminBlockStatusSerializer(user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response({"success": True, "is_blocked": serializer.data['is_blocked']})
+            return Response({"success": True, "is_blocked": serializer.data["is_blocked"]})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def patch_admin(self, request, user_id):
-        user = User.objects.filter(id=user_id).first()
+    @action(detail=True, methods=['patch'], url_path='edit/is_admin')
+    def edit_admin(self, request, pk=None):
+        user = self.get_user(pk)
         if not user:
             return Response({"error": "User not found"}, status=404)
-
         serializer = AdminPrivilegesSerializer(user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response({"success": True, "is_admin": serializer.data['is_admin']})
+            return Response({"success": True, "is_admin": serializer.data["is_admin"]})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class AdminUserStateDetailView(APIView):
@@ -156,7 +162,7 @@ class AdminUserStateDetailView(APIView):
         user = state.user
 
         return Response({
-            "username": user.username,
+            "login": user.login,
             "email": user.email,
             "description": state.description
         })

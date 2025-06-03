@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import check_password
 from django.db.models import Q, Avg
 from django.db.models.functions import TruncDate
 from django.shortcuts import get_object_or_404
@@ -7,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from .serializers import VisibilityUpdateSerializer
+from .serializers import VisibilityUpdateSerializer, PasswordChangeSerializer, UsernameUpdateSerializer
 from api.friends.models import Friendship
 from datetime import datetime, timedelta
 
@@ -130,3 +131,34 @@ class StreakView(APIView):
 
         return Response({"streak_days": streak})
 
+
+
+class UpdateUsernameView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request):
+        serializer = UsernameUpdateSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"success": True, "username": serializer.data['username']})
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request):
+        serializer = PasswordChangeSerializer(data=request.data)
+        if serializer.is_valid():
+            if not check_password(serializer.validated_data['old_password'], request.user.password):
+                return Response({"error": "Incorrect current password"}, status=status.HTTP_400_BAD_REQUEST)
+            request.user.set_password(serializer.validated_data['new_password'])
+            request.user.save()
+            return Response({"success": True})
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class DeleteAccountView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request):
+        request.user.delete()
+        return Response({"deleted": True}, status=status.HTTP_204_NO_CONTENT)

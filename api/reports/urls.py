@@ -20,9 +20,6 @@ urlpatterns = [
     path("admin/user/<int:pk>/resolve/", AdminReportViewSet.as_view({"post": "resolve_user"})),
     path("admin/user/<int:pk>/delete/", AdminReportViewSet.as_view({"delete": "delete_user"})),
     path("admin/user/<int:user_id>/block/", BlockUserView.as_view()),
-    path('admin/user/<int:user_id>/edit/username/', AdminUserUpdateView.as_view()),
-    path('admin/user/<int:user_id>/edit/is_blocked/', AdminUserUpdateView.as_view()),
-    path('admin/user/<int:user_id>/edit/is_admin/', AdminUserUpdateView.as_view()),
     path('admin/state/<int:state_id>/details/', AdminUserStateDetailView.as_view()),
     path("", include(router.urls)),
 ]

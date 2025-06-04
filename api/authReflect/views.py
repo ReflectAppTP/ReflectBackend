@@ -1,3 +1,4 @@
+from django.utils.crypto import get_random_string
 from rest_framework import generics, status
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -38,15 +39,21 @@ class UserProfileView(APIView):
 
 class GuestLoginView(APIView):
     def post(self, request):
-        guest_user, created = User.objects.get_or_create(
-            username='guest',
-            defaults={'is_guest': True, 'email': 'guest@reflect.app'}
+        username = f"guest_{get_random_string(length=8)}"
+        email = f"{username}@guest.local"
+
+        guest_user = User.objects.create(
+            username=username,
+            email=email,
+            is_guest=True,
         )
-        # Важно: не ставим пароль — нельзя войти обычным способом
+
         refresh = RefreshToken.for_user(guest_user)
         return Response({
-            'access': str(refresh.access_token),
-            'refresh': str(refresh)
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
+            "username": username,
+            "is_guest": True
         })
 
 def register_user_from_guest(request):

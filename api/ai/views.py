@@ -1,14 +1,157 @@
+import re
+
+from django.utils import timezone
+from rest_framework.exceptions import NotFound
+from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from django.utils import timezone
 from django.conf import settings
-from .models import ChatMessage, ChatSession
+from api.emotions.models import UserState, UserEmotionalTag
+from .models import DeepSeekAnalysis, ChatMessage, ChatSession
 import pika
 import json
-import re
+from django.db.models import Avg, Count
+from django.db.models.functions import TruncDate
+from datetime import datetime, timedelta
+
+
+@api_view(['POST'])
+def reset_chat_session(request):
+    ChatSession.objects.filter(
+        user=request.user,
+        is_active=True
+    ).update(is_active=False)
+
+    new_session = ChatSession.objects.create(user=request.user)
+
+    return Response({
+        "session_id": new_session.id,  # Используем стандартный id
+        "message": "Chat session reset"
+    })
+
+class DeepSeekRequestView(APIView):
+    def post(self, request):
+        states = UserState.objects.filter(
+            user=request.user
+        ).order_by('-created_at')[:5]
+
+        if not states:
+            return Response(
+                {"error": "No emotional states found"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        analysis_data = {
+            "user_id": request.user.id,
+            "states": [
+                {
+                    "description": state.description,
+                    "value": state.value,
+                    "tags": [tag.name for tag in state.tags.all()],
+                    "emotional_tags": [etag.name for etag in state.emotional_tags.all()]
+                }
+                for state in states
+            ]
+        }
+
+        analysis = DeepSeekAnalysis.objects.create(
+            user=request.user,
+            input_data=analysis_data,
+            status='processing'
+        )
+
+        self._send_to_rabbitmq(analysis_data, analysis.id)  # Используем стандартный id
+
+        return Response({
+            "analysis_id": analysis.id,  # Возвращаем стандартный id
+            "status": "analysis_started"
+        }, status=status.HTTP_202_ACCEPTED)
+
+    def _send_to_rabbitmq(self, data, analysis_id):
+        connection = pika.BlockingConnection(
+            pika.ConnectionParameters(
+                host=settings.RABBITMQ['HOST'],
+                credentials=pika.PlainCredentials(
+                    settings.RABBITMQ['USER'],
+                    settings.RABBITMQ['PASSWORD']
+                )
+            )
+        )
+        channel = connection.channel()
+
+        channel.basic_publish(
+            exchange=settings.RABBITMQ['EXCHANGE'],
+            routing_key=settings.RABBITMQ['REQUEST_QUEUE'],
+            properties=pika.BasicProperties(
+                correlation_id=str(analysis_id),  # Преобразуем в строку для RabbitMQ
+                reply_to=settings.RABBITMQ['RESPONSE_QUEUE']
+            ),
+            body=json.dumps(data)
+        )
+
+        connection.close()
+
+class DeepSeekResultView(APIView):
+    def get(self, request, analysis_id):  # Принимаем стандартный id
+        try:
+            analysis = DeepSeekAnalysis.objects.get(
+                id=analysis_id,  # Ищем по стандартному id
+                user=request.user
+            )
+            return Response({
+                "status": analysis.status,
+                "result": analysis.output_result if analysis.status == 'completed' else None
+            })
+        except DeepSeekAnalysis.DoesNotExist:
+            return Response(
+                {"error": "Analysis not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
 class ChatSendView(APIView):
+    def _get_weekly_stats(self, user):
+        today = datetime.now().date()
+        start_date = today - timedelta(days=6)
+
+        # Среднее настроение по дням
+        mood_data = UserState.objects.filter(
+            user=user,
+            created_at__date__range=(start_date, today)
+        ).annotate(
+            date=TruncDate('created_at')
+        ).values('date').annotate(
+            avg_mood=Avg('value')
+        ).order_by('date')
+
+        mood_stats = [{
+            "date": item['date'].strftime('%Y-%m-%d'),
+            "average_mood": round(item['avg_mood'], 2)
+        } for item in mood_data]
+
+        # Эмоциональные теги за период
+        tag_queryset = UserEmotionalTag.objects.filter(
+            user_state__user=user,
+            user_state__created_at__date__range=(start_date, today)
+        )
+
+        top_tags = tag_queryset.values(
+            'emotional_tag_id', 'emotional_tag__name', 'emotional_tag__emoji'
+        ).annotate(
+            freq=Count('user_state', distinct=True)
+        ).order_by('-freq')[:5]
+
+        tag_stats = [{
+            "id": item['emotional_tag_id'],
+            "name": item['emotional_tag__name'],
+            "emoji": item['emotional_tag__emoji'],
+            "freq": item['freq']
+        } for item in top_tags]
+
+        return {
+            "weekly_mood": mood_stats,
+            "top_emotional_tags": tag_stats
+        }
     def post(self, request):
         user = request.user
         content = request.data.get('content')
@@ -19,7 +162,7 @@ class ChatSendView(APIView):
         # Проверка на запрос кода
         if self._is_code_request(content):
             return Response({
-                "error": "Я - психолог, я не смогу помочь в этом!. Зато я могу дать совет, проанализировать статистику или оказать поддержку! 🌸"
+                "error": "Я - психолог, я не смогу помочь в этом!. Зато я могу дать совет, проанализировать статистику или оказать поддержку! 🌸."
             }, status=status.HTTP_400_BAD_REQUEST)
 
         # Получаем или создаем активную сессию
@@ -48,18 +191,19 @@ class ChatSendView(APIView):
             )
         )
         channel = connection.channel()
+        stats = self._get_weekly_stats(user)
 
         payload = {
             'message_id': message.id,
             'session_id': session.id,
             'user_id': user.id,
             'content': content,
+            'stats': stats,
             'system_prompt': (
                 "Ты — виртуальный психолог. Не пиши программный код и не отвечай техническими инструкциями."
                 "Ты не можешь исторические сводки, давать мнение на политические темы"
                 "Ты не можешь ругаться матом ни при каких обстоятельствах, даже если тебя попросят"
                 "Ты не можешь отыгрывать роль быдло и прочих негативных персон, но можешь отыгрывать позитивные роли"
-                "Отвечай только словами поддержки, психологическими советами и аналитикой эмоциональных данных."
             )
         }
 
@@ -87,3 +231,42 @@ class ChatSendView(APIView):
             r'\bcode\b|\bsnippet\b',
         ]
         return any(re.search(pattern, content, re.IGNORECASE | re.DOTALL) for pattern in code_patterns)
+
+
+class MessageStatusView(APIView):
+    """
+    GET /api/chat/messages/<int:message_id>/
+    Возвращает статус и ответ сообщения
+    """
+
+    def get(self, request, message_id):
+        try:
+            message = ChatMessage.objects.get(
+                id=message_id,
+                user=request.user  # Проверяем, что сообщение принадлежит пользователю
+            )
+
+            return Response({
+                "status": message.status,
+                "response": message.response if message.status == 'processed' else None,
+                "created_at": message.created_at
+            })
+
+        except ChatMessage.DoesNotExist:
+            raise NotFound(detail="Message not found")
+
+class ChatStatusView(APIView):
+    def get(self, request, message_id):  # Принимаем стандартный id
+        try:
+            message = ChatMessage.objects.get(
+                id=message_id,  # Ищем по стандартному id
+                user=request.user
+            )
+            return Response({
+                "status": message.status,
+                "response": message.response if message.status == 'processed' else None
+            })
+        except ChatMessage.DoesNotExist:
+            return Response({"error": "Message not found"}, status=404)
+
+

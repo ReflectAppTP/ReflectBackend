@@ -30,7 +30,7 @@ SECRET_KEY = 'django-insecure-na87rvwdlfcva0t_r^37-#b5ns$pgs&9p%)r%u@f$bz8+^c@^b
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost','185.185.71.233', 'reflect-app.ru', 'www.reflect-app.ru']
+ALLOWED_HOSTS = ['localhost','185.185.71.233', 'reflect-app.ru', 'www.reflect-app.ru', 'web']
 
 
 # Application definition

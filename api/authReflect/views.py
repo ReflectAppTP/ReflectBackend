@@ -56,32 +56,30 @@ class GuestLoginView(APIView):
             "is_guest": True
         })
 
-def register_user_from_guest(request):
-    guest_user = request.user
+class RegisterFromGuestView(APIView):
+    permission_classes = [IsAuthenticated]
 
-    if not getattr(guest_user, 'is_guest', False):
-        return Response({"error": "Нельзя выполнить перенос — пользователь не является гостем"}, status=400)
+    def post(self, request):
+        guest_user = request.user
 
-    # Получаем данные из формы
-    username = request.data.get("username")
-    email = request.data.get("email")
-    password = request.data.get("password")
+        if not getattr(guest_user, 'is_guest', False):
+            return Response({"error": "Нельзя выполнить перенос — пользователь не является гостем"}, status=400)
 
-    if not (username and email and password):
-        return Response({"error": "Неполные данные"}, status=400)
+        username = request.data.get("username")
+        email = request.data.get("email")
+        password = request.data.get("password")
 
-    # Создаём обычного пользователя
-    new_user = User.objects.create_user(
-        username=username,
-        email=email,
-        password=password,
-        is_guest=False
-    )
+        if not (username and email and password):
+            return Response({"error": "Неполные данные"}, status=400)
 
-    # Переносим все UserState
-    UserState.objects.filter(user=guest_user).update(user=new_user)
+        new_user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+            is_guest=False
+        )
 
-    # Удаляем гостя
-    guest_user.delete()
+        UserState.objects.filter(user=guest_user).update(user=new_user)
+        guest_user.delete()
 
-    return Response({"success": True, "username": new_user.username})
+        return Response({"success": True, "username": new_user.username})

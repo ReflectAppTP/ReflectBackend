@@ -7,7 +7,7 @@ from .models import User
 from .serializers import RegisterSerializer, UserSerializer, LoginSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from .serializers import UserSerializer
 from ..emotions.models import UserState
 from ..friends.models import Friendship
@@ -16,7 +16,7 @@ from ..friends.models import Friendship
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
-
+    permission_classes = [AllowAny]
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)

@@ -8,7 +8,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from .serializers import VisibilityUpdateSerializer, PasswordChangeSerializer, UsernameUpdateSerializer
+from .serializers import VisibilityUpdateSerializer, PasswordChangeSerializer, UsernameUpdateSerializer, \
+    PremiumUpdateSerializer
 from api.friends.models import Friendship
 from datetime import datetime, timedelta
 
@@ -37,6 +38,16 @@ class UpdateVisibilityView(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response({"success": True, "visibility": serializer.data['visibility']})
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class UpdatePremiumView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request):
+        serializer = PremiumUpdateSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"success": True, "is_premium": serializer.data['is_premium']})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class UserDetailWithStateView(APIView):

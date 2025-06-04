@@ -8,6 +8,7 @@ urlpatterns = [
     path("user/<int:user_id>/", UserDetailWithStateView.as_view()),
     path('user/streak/', StreakView.as_view()),
     path("user/update/visibility/", UpdateVisibilityView.as_view()),
+    path("user/update/premium/", UpdateVisibilityView.as_view()),
     path("user/update/username/", UpdateUsernameView.as_view()),
     path("user/update/password/", ChangePasswordView.as_view()),
     path("user/delete/", DeleteAccountView.as_view()),

@@ -55,7 +55,7 @@ INSTALLED_APPS = [
 
 ]
 RABBITMQ = {
-    'HOST': 'reflect-app.ru',
+    'HOST': '185.185.71.233',
     'PORT': 5672,
     'USER': 'raivanin',
     'PASSWORD': 'akeruwerawnitu',
@@ -130,7 +130,7 @@ DATABASES = {
         'NAME': 'postgres',
         'USER': 'postgres',
         'PASSWORD': 'akeruwerawnitu',
-        'HOST': 'reflect-app.ru',
+        'HOST': '185.185.71.233',
         'PORT': '5438'
     }
 }

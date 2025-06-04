@@ -1,0 +1,97 @@
+name: Django CI/CD
+
+on: [push]
+
+env:
+  PROJECT_DIR: /home/goida/serverspace/backend/ReflectBackend
+  DOCKER_IMAGE: serverspace_web
+  DOCKER_TAG: latest
+  SECRETS_FILE: .env.prod
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    - name: Run tests
+      env:
+        DATABASE_URL: postgres://testuser:testpass@localhost:5432/testdb
+        DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+      run: |
+        python manage.py test --noinput
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Test SSH connection
+      run: |
+        # Создаём .ssh директорию
+        mkdir -p ~/.ssh
+        chmod 700 ~/.ssh
+        
+        # Сохраняем приватный ключ в файл
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+        chmod 600 ~/.ssh/deploy_key
+        
+        # Проверяем подключение
+        ssh -o StrictHostKeyChecking=no \
+            -i ~/.ssh/deploy_key \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            -p ${{ secrets.SSH_PORT || '22' }} \
+            "echo 'SSH connection successful!'"
+        
+        # Удаляем ключ после использования (опционально)
+        rm -f ~/.ssh/deploy_key
+    - name: Setup SSH
+      run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          echo "${{ secrets.SSH_KNOWN_HOSTS }}" | base64 -d >> ~/.ssh/known_hosts
+
+    - name: Secure Copy Files
+      run: |
+        rsync -avz -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+          --exclude='.git' \
+          --exclude='.github' \
+          ./ \
+          ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:$PROJECT_DIR.new
+    
+    - name: Deploy via SSH
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: ${{ secrets.SSH_PORT || '22' }}
+        script: |
+          cd /home/goida/serverspace/backend/ReflectBackend
+          git fetch
+          git pull
+          # Безопасный down (не удаляет volumes и образы)
+          docker-compose down --remove-orphans
+          # Пересборка с кэшированием
+          docker-compose build --no-cache
+          docker-compose up -d
+          rm -rf $PROJECT_DIR.backup

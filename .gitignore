@@ -1,0 +1,7 @@
+/api/authReflect/migrations/
+/api/emotions/migrations/
+.env.prod
+*.pyc
+__pycache__/
+staticfiles/
+media/

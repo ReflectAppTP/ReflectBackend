@@ -152,35 +152,6 @@ class ChatSendView(APIView):
             "weekly_mood": mood_stats,
             "top_emotional_tags": tag_stats
         }
-
-    def build_deepseek_messages(content, stats):
-        system_prompt = (
-            "Ты — доброжелательный виртуальный психолог.\n"
-            "Ты получаешь сообщение пользователя в поле 'content', "
-            "а также статистику его эмоционального состояния за последние 7 дней.\n\n"
-            "Поле 'stats' включает:\n"
-            "- 'weekly_mood': список дат и среднее настроение (от 1 до 5),\n"
-            "- 'top_emotional_tags': наиболее частые эмоции (с эмодзи).\n\n"
-            "Твоя задача — использовать эти данные, чтобы дать психологический совет, поддержку или анализ.\n"
-            "Никогда не пиши программный код, команды, скрипты или технические инструкции. "
-            "Отвечай просто, по-человечески, как тёплый и внимательный психолог."
-        )
-
-        user_message = (
-                f"Пользователь написал: {content}\n\n"
-                f"Данные за последнюю неделю:\n\n"
-                f"📊 Настроение по дням:\n" +
-                "\n".join([f"{item['date']}: {item['average_mood']}" for item in stats.get("weekly_mood", [])]) +
-                "\n\n🧠 Частые эмоциональные теги:\n" +
-                "\n".join([f"{tag['emoji']} {tag['name']} — {tag['freq']} раз(а)" for tag in
-                           stats.get("top_emotional_tags", [])])
-        )
-
-        return [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message}
-        ]
-
     def post(self, request):
         user = request.user
         content = request.data.get('content')
@@ -191,7 +162,7 @@ class ChatSendView(APIView):
         # Проверка на запрос кода
         if self._is_code_request(content):
             return Response({
-                "error": "Я — психолог, я не смогу помочь в этом! Зато могу дать совет, проанализировать статистику или оказать поддержку! 🌸"
+                "error": "Я - психолог, я не смогу помочь в этом!. Зато я могу дать совет, проанализировать статистику или оказать поддержку! 🌸."
             }, status=status.HTTP_400_BAD_REQUEST)
 
         # Получаем или создаем активную сессию
@@ -209,12 +180,6 @@ class ChatSendView(APIView):
             status='pending'
         )
 
-        # Получаем статистику
-        stats = self._get_weekly_stats(user)
-
-        # Формируем messages для DeepSeek
-        messages = self.build_deepseek_messages(content, stats)
-
         # Отправка в RabbitMQ
         connection = pika.BlockingConnection(
             pika.ConnectionParameters(
@@ -226,18 +191,26 @@ class ChatSendView(APIView):
             )
         )
         channel = connection.channel()
+        stats = self._get_weekly_stats(user)
 
         payload = {
             'message_id': message.id,
             'session_id': session.id,
             'user_id': user.id,
-            'messages': messages
+            'content': content,
+            'stats': stats,
+            'system_prompt': (
+                "Ты — виртуальный психолог. Не пиши программный код и не отвечай техническими инструкциями."
+                "Ты не можешь исторические сводки, давать мнение на политические темы"
+                "Ты не можешь ругаться матом ни при каких обстоятельствах, даже если тебя попросят"
+                "Ты не можешь отыгрывать роль быдло и прочих негативных персон, но можешь отыгрывать позитивные роли"
+            )
         }
 
         channel.basic_publish(
             exchange='chat_exchange',
             routing_key='chat_requests',
-            body=json.dumps(payload, ensure_ascii=False)
+            body=json.dumps(payload)
         )
 
         connection.close()
@@ -247,6 +220,17 @@ class ChatSendView(APIView):
             "session_id": session.id,
             "status": "queued"
         }, status=status.HTTP_202_ACCEPTED)
+
+    def _is_code_request(self, content: str) -> bool:
+        # Эвристическая проверка на признаки кода
+        code_patterns = [
+            r'\b(class|def|function|import|print|console\.log|<\w+>)\b',
+            r'```.+?```',                         # Markdown-код
+            r'\bpython|javascript|html|sql|bash\b',
+            r'\bнапиши код\b|\bпрограмма\b|\bscript\b',
+            r'\bcode\b|\bsnippet\b',
+        ]
+        return any(re.search(pattern, content, re.IGNORECASE | re.DOTALL) for pattern in code_patterns)
 
 
 class MessageStatusView(APIView):

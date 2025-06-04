@@ -4,7 +4,7 @@ from .serializers import UserStateSerializer, EmotionalTagSerializer, TagSeriali
 from django.db.models import Count, Case, When, IntegerField, Avg, DateField
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.db.models.functions import Cast, TruncDate
+from django.db.models.functions import Cast, TruncDate, TruncMonth
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
@@ -217,19 +217,30 @@ class MonthlyMoodStatsView(APIView):
 
 class YearlyMoodStatsView(APIView):
     def get(self, request):
-        today = datetime.now().date()
-        start_date = today - relativedelta(years=1) + timedelta(days=1)
+        today = datetime.now().date().replace(day=1)
+        start_date = today - relativedelta(months=11)
 
         stats = UserState.objects.filter(
             user=request.user,
-            created_at__date__range=(start_date, today)
+            created_at__date__range=(start_date, today + relativedelta(months=1))
         ).annotate(
-            date=TruncDate('created_at')
-        ).values('date').annotate(
+            month=TruncMonth('created_at')
+        ).values('month').annotate(
             avg_mood=Avg('value')
-        ).order_by('date')
+        )
 
-        return Response([{
-            "date": item['date'].strftime('%Y-%m-%d'),
-            "average_mood": round(item['avg_mood'], 2)
-        } for item in stats])
+        mood_by_month = {
+            stat['month'].strftime('%Y-%m'): round(stat['avg_mood'], 2)
+            for stat in stats
+        }
+
+        result = []
+        for i in range(12):
+            month_date = (start_date + relativedelta(months=i))
+            key = month_date.strftime('%Y-%m')
+            result.append({
+                "month": key,
+                "average_mood": mood_by_month.get(key, 0.0)
+            })
+
+        return Response(result)

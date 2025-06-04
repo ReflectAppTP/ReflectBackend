@@ -3,6 +3,7 @@ from rest_framework import generics, status
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+from .authentification import SafeJWTAuthentication
 from .models import User
 from .serializers import RegisterSerializer, UserSerializer, LoginSerializer
 from rest_framework.views import APIView
@@ -17,6 +18,8 @@ class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
     permission_classes = [AllowAny]
+    authentication_classes = [SafeJWTAuthentication]  # переопределение здесь
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)

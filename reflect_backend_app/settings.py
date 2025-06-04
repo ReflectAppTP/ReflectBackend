@@ -55,7 +55,7 @@ INSTALLED_APPS = [
 
 ]
 RABBITMQ = {
-    'HOST': '185.185.71.233',
+    'HOST': 'reflect-app.ru',
     'PORT': 5672,
     'USER': 'raivanin',
     'PASSWORD': 'akeruwerawnitu',
@@ -64,7 +64,7 @@ RABBITMQ = {
     'RESPONSE_QUEUE': 'deepseek_results'
 }
 OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
-OPENROUTER_REFERER_URL = os.getenv('OPENROUTER_REFERER_URL', 'http://185.185.71.233')
+OPENROUTER_REFERER_URL = os.getenv('OPENROUTER_REFERER_URL', 'https://reflect-app.ru')
 OPENROUTER_APP_NAME = os.getenv('OPENROUTER_APP_NAME', 'Reflect App')
 
 MIDDLEWARE = [
@@ -130,7 +130,7 @@ DATABASES = {
         'NAME': 'postgres',
         'USER': 'postgres',
         'PASSWORD': 'akeruwerawnitu',
-        'HOST': '185.185.71.233',
+        'HOST': 'reflect-app.ru',
         'PORT': '5438'
     }
 }

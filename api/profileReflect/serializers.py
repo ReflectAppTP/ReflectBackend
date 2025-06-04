@@ -12,7 +12,7 @@ class VisibilityUpdateSerializer(serializers.ModelSerializer):
 class PremiumUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['visibility']
+        fields = ['is_premium']
 
 class UsernameUpdateSerializer(serializers.ModelSerializer):
     class Meta:

@@ -41,6 +41,8 @@ class UserProfileView(APIView):
         return Response(serializer.data)
 
 class GuestLoginView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = [SafeJWTAuthentication]
     def post(self, request):
         username = f"guest_{get_random_string(length=8)}"
         email = f"{username}@guest.local"
